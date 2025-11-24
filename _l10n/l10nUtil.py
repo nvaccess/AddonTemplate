@@ -23,7 +23,7 @@ import json
 CROWDIN_PROJECT_ID = 780748
 POLLING_INTERVAL_SECONDS = 5
 EXPORT_TIMEOUT_SECONDS = 60 * 10  # 10 minutes
-JSON_FILE = os.path.join(os.path.dirname(__file__), "files.json")
+JSON_FILE = os.path.join(os.path.dirname(__file__), "..", "metadata.json")
 
 
 def fetchCrowdinAuthToken() -> str:
