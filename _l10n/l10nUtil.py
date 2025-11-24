@@ -1,5 +1,5 @@
 # A part of NonVisual Desktop Access (NVDA)
-# Copyright (C) 2024-2025 NV Access Limited.
+# Copyright (C) 2024-2025 NV Access Limited, Noelia Ruiz Martínez
 # This file is covered by the GNU General Public License.
 # See the file COPYING for more details.
 
@@ -23,7 +23,9 @@ import json
 CROWDIN_PROJECT_ID = 780748
 POLLING_INTERVAL_SECONDS = 5
 EXPORT_TIMEOUT_SECONDS = 60 * 10  # 10 minutes
-JSON_FILE = os.path.join(os.path.dirname(__file__), "..", "metadata.json")
+METADATA_FILE = os.path.join(os.path.dirname(__file__), "..", "metadata.json")
+METADATA_FILE = os.path.join(os.path.dirname(__file__), "..", "metadata.json")
+L10N_FILE = os.path.join(os.path.dirname(__file__), "l10n.json")
 
 
 def fetchCrowdinAuthToken() -> str:
@@ -296,10 +298,14 @@ def uploadSourceFile(localFilePath: str):
 			res = getCrowdinClient().source_files.update_file(fileId=fileId , storageId=storageId, projectId=CROWDIN_PROJECT_ID)
 
 
-def getFiles() -> dict:
+def getFiles() -> dict[str, str]:
 	"""Gets files from Crowdin, and write them to a json file."""
 
-	res = getCrowdinClient().source_files.list_files(CROWDIN_PROJECT_ID, limit=500)
+	with open(METADATA_FILE, "R", encoding="utf-8") as jsonFile:
+		addonData = json.load(jsonFile)
+		addonId = addonData.get("addonId")
+
+	res = getCrowdinClient().source_files.list_files(CROWDIN_PROJECT_ID, filter=addonId)
 	if res is None:
 		raise ValueError("Getting files from Crowdin failed")
 	dictionary = dict()
@@ -309,8 +315,8 @@ def getFiles() -> dict:
 		name = fileInfo["name"]
 		id = fileInfo["id"]
 		dictionary[name] = id
-	with open(JSON_FILE, "w", encoding="utf-8") as jsonFile:
-			json.dump(dictionary, jsonFile, ensure_ascii=False)
+	with open(L10N_FILE, "w", encoding="utf-8") as jsonFile:
+		json.dump(dictionary, jsonFile, ensure_ascii=False)
 	return dictionary
 
 
@@ -321,7 +327,7 @@ def uploadTranslationFile(crowdinFilePath: str, localFilePath: str, language: st
 	:param localFilePath: The path to the local file to be uploaded
 	:param language: The language code to upload the translation for
 	"""
-	with open(JSON_FILE, "r", encoding="utf-8") as jsonFile:
+	with open(L10N_FILE, "r", encoding="utf-8") as jsonFile:
 		files = json.load(jsonFile)
 	fileId = files.get(crowdinFilePath)
 	if fileId is None:
