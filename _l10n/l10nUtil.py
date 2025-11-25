@@ -19,12 +19,11 @@ import sys
 import zipfile
 import time
 import json
+from .. import buildVars
 
 CROWDIN_PROJECT_ID = 780748
 POLLING_INTERVAL_SECONDS = 5
 EXPORT_TIMEOUT_SECONDS = 60 * 10  # 10 minutes
-METADATA_FILE = os.path.join(os.path.dirname(__file__), "..", "metadata.json")
-METADATA_FILE = os.path.join(os.path.dirname(__file__), "..", "metadata.json")
 L10N_FILE = os.path.join(os.path.dirname(__file__), "l10n.json")
 
 
@@ -301,9 +300,7 @@ def uploadSourceFile(localFilePath: str):
 def getFiles() -> dict[str, str]:
 	"""Gets files from Crowdin, and write them to a json file."""
 
-	with open(METADATA_FILE, "R", encoding="utf-8") as jsonFile:
-		addonData = json.load(jsonFile)
-		addonId = addonData.get("addonId")
+	addonId = buildVars.addon_info["addon_name"]
 
 	res = getCrowdinClient().source_files.list_files(CROWDIN_PROJECT_ID, filter=addonId)
 	if res is None:
@@ -802,35 +799,6 @@ def main():
 	)
 	command_xliff2md.add_argument("xliffPath", help="Path to the xliff file")
 	command_xliff2md.add_argument("mdPath", help="Path to the resulting markdown file")
-	command_md2html = commands.add_parser("md2html", help="Convert markdown to html")
-	command_md2html.add_argument("-l", "--lang", help="Language code", action="store", default="en")
-	command_md2html.add_argument(
-		"-t",
-		"--docType",
-		help="Type of document",
-		action="store",
-		choices=["userGuide", "developerGuide", "changes", "keyCommands"],
-	)
-	command_md2html.add_argument("mdPath", help="Path to the markdown file")
-	command_md2html.add_argument("htmlPath", help="Path to the resulting html file")
-	command_xliff2html = commands.add_parser("xliff2html", help="Convert xliff to html")
-	command_xliff2html.add_argument("-l", "--lang", help="Language code", action="store", required=False)
-	command_xliff2html.add_argument(
-		"-t",
-		"--docType",
-		help="Type of document",
-		action="store",
-		choices=["userGuide", "developerGuide", "changes", "keyCommands"],
-	)
-	command_xliff2html.add_argument(
-		"-u",
-		"--untranslated",
-		help="Produce the untranslated markdown file",
-		action="store_true",
-		default=False,
-	)
-	command_xliff2html.add_argument("xliffPath", help="Path to the xliff file")
-	command_xliff2html.add_argument("htmlPath", help="Path to the resulting html file")
 	uploadSourceFileCommand = commands.add_parser(
 		"uploadSourceFile",
 		help="Upload a source file to Crowdin.",
@@ -912,21 +880,6 @@ def main():
 				outputPath=args.mdPath,
 				translated=not args.untranslated,
 			)
-		case "md2html":
-			md2html.main(source=args.mdPath, dest=args.htmlPath, lang=args.lang, docType=args.docType)
-		case "xliff2html":
-			lang = args.lang or fetchLanguageFromXliff(args.xliffPath, source=args.untranslated)
-			temp_mdFile = tempfile.NamedTemporaryFile(suffix=".md", delete=False, mode="w", encoding="utf-8")
-			temp_mdFile.close()
-			try:
-				markdownTranslate.generateMarkdown(
-					xliffPath=args.xliffPath,
-					outputPath=temp_mdFile.name,
-					translated=not args.untranslated,
-				)
-				md2html.main(source=temp_mdFile.name, dest=args.htmlPath, lang=lang, docType=args.docType)
-			finally:
-				os.remove(temp_mdFile.name)
 		case "uploadSourceFile":
 			uploadSourceFile(args.localFilePath)
 		case "getFiles":
