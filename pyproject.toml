@@ -1,9 +1,26 @@
+[build-system]
+requires = ["setuptools~=72.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "addonTemplate"
+dynamic = ["version"]
 version = "0.1.0"
-description = "Addon template"
-readme = "readme.md"
-requires-python = ">=3.13"
+description = "Add-on template"
+maintainers = [
+	{name = "NV Access", email = "info@nvaccess.org"},
+]
+requires-python = ">=3.13,<3.14"
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Intended Audience :: End Users/Desktop",
+	"License :: OSI Approved :: GNU General Public License v2",
+	"Operating System :: Microsoft :: Windows",
+	"Programming Language :: Python :: 3",
+	"Topic :: Accessibility",
+]
+readme="readme.md"
+license = {file = "LICENSE"}
 dependencies = [
     "crowdin-api-client==1.21.0",
     "lxml>=6.0.1",
@@ -15,3 +32,177 @@ dependencies = [
     "requests>=2.32.5",
 	   "SCons==4.10.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/nvaccess/addonTemplate"
+
+[tool.ruff]
+line-length = 110
+
+builtins = [
+	# translation lookup
+	"_",
+	# translation lookup
+	"ngettext",
+	# translation lookup
+	"pgettext",
+	# translation lookup
+	"npgettext",
+]
+
+include = [
+	"*.py",
+	"sconstruct",
+]
+
+exclude = [
+	".git",
+	"__pycache__",
+	".venv",
+	"buildVars.py",
+]
+
+[tool.ruff.format]
+indent-style = "tab"
+line-ending = "lf"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 15
+
+[tool.ruff.lint]
+ignore = [
+	# indentation contains tabs
+	"W191",
+]
+logger-objects = ["logHandler.log"]
+
+[tool.ruff.lint.per-file-ignores]
+# sconscripts contains many inbuilt functions not recognised by the lint,
+# so ignore F821.
+"sconstruct" = ["F821"]
+
+[tool.pyright]
+venvPath = "../nvda/.venv"
+venv = "."
+pythonPlatform = "Windows"
+typeCheckingMode = "strict"
+
+include = [
+	"**/*.py",
+]
+
+exclude = [
+	"sconstruct",
+	".git",
+	"__pycache__",
+	".venv",
+	# When excluding concrete paths relative to a directory,
+	# not matching multiple folders by name e.g. `__pycache__`,
+	# paths are relative to the configuration file.
+]
+
+# Tell pyright where to load python code from
+extraPaths = [
+	"./addon",
+	"../nvda/source",
+]
+
+# General config
+analyzeUnannotatedFunctions = true
+deprecateTypingAliases = true
+
+# Stricter typing
+strictParameterNoneValue = true
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+
+# Compliant rules
+reportAssertAlwaysTrue = true
+reportAssertTypeFailure = true
+reportDuplicateImport = true
+reportIncompleteStub = true
+reportInconsistentOverload = true
+reportInconsistentConstructor = true
+reportInvalidStringEscapeSequence = true
+reportInvalidStubStatement = true
+reportInvalidTypeVarUse = true
+reportMatchNotExhaustive = true
+reportMissingModuleSource = true
+reportMissingImports = true
+reportNoOverloadImplementation = true
+reportOptionalContextManager = true
+reportOverlappingOverload = true
+reportPrivateImportUsage = true
+reportPropertyTypeMismatch = true
+reportSelfClsParameterName = true
+reportShadowedImports = true
+reportTypeCommentUsage = true
+reportTypedDictNotRequiredAccess = true
+reportUndefinedVariable = true
+reportUnusedExpression = true
+reportUnboundVariable = true
+reportUnhashable = true
+reportUnnecessaryCast = true
+reportUnnecessaryContains = true
+reportUnnecessaryTypeIgnoreComment = true
+reportUntypedClassDecorator = true
+reportUntypedFunctionDecorator = true
+reportUnusedClass = true
+reportUnusedCoroutine = true
+reportUnusedExcept = true
+reportDeprecated = true
+# Can be enabled by generating type stubs for modules via pyright CLI
+reportMissingTypeStubs = false
+reportUnsupportedDunderAll = false
+reportAbstractUsage = false
+reportUntypedBaseClass = false
+reportOptionalIterable = false
+reportCallInDefaultInitializer = false
+reportInvalidTypeArguments = false
+reportUntypedNamedTuple = false
+reportRedeclaration = false
+reportOptionalCall = false
+reportConstantRedefinition = false
+reportWildcardImportFromLibrary = false
+reportIncompatibleVariableOverride = false
+reportInvalidTypeForm = false
+reportGeneralTypeIssues = false
+reportOptionalOperand = false
+reportUnnecessaryComparison = false
+reportFunctionMemberAccess = false
+reportUnnecessaryIsInstance = false
+reportUnusedFunction = false
+reportImportCycles = false
+reportUnusedImport = false
+reportUnusedVariable = false
+reportOperatorIssue = false
+reportAssignmentType = false
+reportReturnType = false
+reportPossiblyUnboundVariable = false
+reportMissingSuperCall = false
+reportUninitializedInstanceVariable = false
+reportUnknownLambdaType = false
+reportMissingTypeArgument = false
+reportImplicitStringConcatenation = false
+reportIncompatibleMethodOverride = false
+reportPrivateUsage = false
+reportUnusedCallResult = false
+reportOptionalSubscript = false
+reportCallIssue = false
+reportOptionalMemberAccess = false
+reportImplicitOverride = false
+reportIndexIssue = false
+reportAttributeAccessIssue = false
+reportArgumentType = false
+reportUnknownParameterType = false
+reportMissingParameterType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+lint = [
+	"ruff==0.8.1",
+	"pre-commit==4.0.1",
+	"pyright==1.1.396",
+]
+
