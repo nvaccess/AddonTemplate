@@ -3,6 +3,9 @@
 # This file is covered by the GNU General Public License.
 # See the file COPYING for more details.
 
+import os, sys
+sys.path.insert(0, os.getcwd())
+
 import crowdin_api as crowdin
 import tempfile
 import lxml.etree
@@ -10,7 +13,6 @@ import os
 import shutil
 import argparse
 import markdownTranslate
-import md2html
 import requests
 import codecs
 import re
@@ -19,7 +21,8 @@ import sys
 import zipfile
 import time
 import json
-from .. import buildVars
+
+import buildVars
 
 CROWDIN_PROJECT_ID = 780748
 POLLING_INTERVAL_SECONDS = 5
@@ -237,7 +240,7 @@ def downloadTranslationFile(crowdinFilePath: str, localFilePath: str, language: 
 	:param localFilePath: The path to save the local file
 	:param language: The language code to download the translation for
 	"""
-	with open(JSON_FILE, "r", encoding="utf-8") as jsonFile:
+	with open(L10N_FILE, "r", encoding="utf-8") as jsonFile:
 		files = json.load(jsonFile)
 		fileId = files.get(crowdinFilePath)
 	if fileId is None:
@@ -263,7 +266,7 @@ def uploadSourceFile(localFilePath: str):
 	Upload a source file to Crowdin.
 	:param localFilePath: The path to the local file to be uploaded
 	"""
-	with open(JSON_FILE, "r", encoding="utf-8") as jsonFile:
+	with open(L10N_FILE, "r", encoding="utf-8") as jsonFile:
 		files = json.load(jsonFile)
 	fileId = files.get(localFilePath)
 	if fileId is None:
@@ -282,19 +285,31 @@ def uploadSourceFile(localFilePath: str):
 	match fileId:
 		case None:
 			if os.path.splitext(filename)[1] == ".pot":
-				title=f"{os.path.splitext(filename)[0]} interface"
-				exportPattern = f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{os.path.splitext(filename)[0]}.po"
+				title = f"{os.path.splitext(filename)[0]} interface"
+				exportPattern = (
+					f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{os.path.splitext(filename)[0]}.po"
+				)
 			else:
-				title=f"{os.path.splitext(filename)[0]} documentation"
-				exportPattern =f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{filename}"
+				title = f"{os.path.splitext(filename)[0]} documentation"
+				exportPattern = f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{filename}"
 			exportOptions = {
-				"exportPattern": exportPattern
+				"exportPattern": exportPattern,
 			}
 			print(f"Importing source file {localFilePath} from storage with ID {storageId}")
-			res = getCrowdinClient().source_files.add_file(storageId=storageId, projectId=CROWDIN_PROJECT_ID, name=filename, title=title, exportOptions=exportOptions)
+			res = getCrowdinClient().source_files.add_file(
+				storageId=storageId,
+				projectId=CROWDIN_PROJECT_ID,
+				name=filename,
+				title=title,
+				exportOptions=exportOptions,
+			)
 			print("Done")
 		case _:
-			res = getCrowdinClient().source_files.update_file(fileId=fileId , storageId=storageId, projectId=CROWDIN_PROJECT_ID)
+			res = getCrowdinClient().source_files.update_file(
+				fileId=fileId,
+				storageId=storageId,
+				projectId=CROWDIN_PROJECT_ID,
+			)
 
 
 def getFiles() -> dict[str, str]:
@@ -799,19 +814,6 @@ def main():
 	)
 	command_xliff2md.add_argument("xliffPath", help="Path to the xliff file")
 	command_xliff2md.add_argument("mdPath", help="Path to the resulting markdown file")
-	uploadSourceFileCommand = commands.add_parser(
-		"uploadSourceFile",
-		help="Upload a source file to Crowdin.",
-	)
-	uploadSourceFileCommand.add_argument(
-		"-f",
-		"--localFilePath",
-		help="The local path to the file.",
-	)
-	getFilesCommand = commands.add_parser(
-		"getFiles",
-		help="Get files from Crowdin.",
-	)
 	downloadTranslationFileCommand = commands.add_parser(
 		"downloadTranslationFile",
 		help="Download a translation file from Crowdin.",
@@ -854,7 +856,15 @@ def main():
 		default=None,
 		help="The path to the local file to be uploaded. If not provided, the Crowdin file path will be used.",
 	)
-
+	uploadSourceFileCommand = commands.add_parser(
+		"uploadSourceFile",
+		help="Upload a source file to Crowdin.",
+	)
+	uploadSourceFileCommand.add_argument(
+		"-f",
+		"--localFilePath",
+		help="The local path to the file.",
+	)
 	exportTranslationsCommand = commands.add_parser(
 		"exportTranslations",
 		help="Export translation files from Crowdin as a bundle. If no language is specified, exports all languages.",
@@ -869,7 +879,7 @@ def main():
 		"-l",
 		"--language",
 		help="Language code to export (e.g., 'es', 'fr', 'de'). If not specified, exports all languages.",
-	default=None,
+		default=None,
 	)
 
 	args = args.parse_args()

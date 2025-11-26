@@ -39,13 +39,14 @@ jobs:
         id: getAddonId
         shell: python
         run: |
-          import os
+          import os, sys
+          sys.path.insert(0, os.getcwd())
           import buildVars
           addonId = buildVars.addon_info["addon_name"]
           name = 'addonId'
           value = addonId
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-            f.write(f"{name}={value}"")
+            f.write(f"{name}={value}")
       - name: Generate xliff
         if: ${{ !inputs.update }}
         run: |
@@ -53,7 +54,7 @@ jobs:
       - name: update xliff
         if: ${{ inputs.update }}
         run: |
-          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getId.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonId.outputs.addonId }}.xliff.temp
+          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getAddonId.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonId.outputs.addonId }}.xliff.temp
           mv ${{ steps.getAddonId.outputs.addonId }}.xliff.temp ${{ steps.getAddonId.outputs.addonId }}.xliff
           fi
       - name: Upload to Crowdin
