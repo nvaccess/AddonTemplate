@@ -1,21 +1,9 @@
 name: Export add-on to Crowdin
 
 on:
+
   workflow_dispatch:
     inputs:
-      repo:
-        description: 'Repository name'
-        required: true
-      update:
-        description: 'true to update preexisting sources, false to add them from scratch'
-        type: boolean
-
-  workflow_call:
-    inputs:
-      repo:
-        description: 'Repository name'
-        type: 'string'
-        required: true
       update:
         description: 'true to update preexisting sources, false to add them from scratch'
         type: boolean
@@ -26,9 +14,15 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout add-on
         uses: actions/checkout@v6
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -39,43 +33,42 @@ jobs:
         run: |
           scons
           scons pot
-  exportToCrowdin:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      contents: write
-    steps:
-      - name: Checkout main branch
-        uses: actions/checkout@v6
-      - name: "Set up Python"
-        uses: actions/setup-python@v6
-        with:
-          python-version-file: ".python-version"
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
+      - name: Get add-on id
+        id: getAddonId
+        shell: python
+        run: |
+          import os
+          import buildVars
+          addonId = buildVars.addon_info["addon_name"]
+          name = 'addonId'
+          value = addonId
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+            f.write(f"{name}={value}"")
       - name: Generate xliff
         if: ${{ !inputs.update }}
         run: |
-          uv run ./_l10n/markdownTranslate.py generateXliff -m readme.md -o inputs.repo }}.xliff
+          uv run ./_l10n/markdownTranslate.py generateXliff -m readme.md -o ${{ steps.getAddonId.outputs.addonId }}.xliff
       - name: update xliff
         if: ${{ inputs.update }}
         run: |
-          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ inputs.repo }}.xliff -m ${{ inputs.repo }}.md -o ${{ inputs.repo }}.xliff.temp
-          mv ${{ inputs.repo }}.xliff.temp ${{ inputs.repo }}.xliff
+          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getId.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonId.outputs.addonId }}.xliff.temp
+          mv ${{ steps.getAddonId.outputs.addonId }}.xliff.temp ${{ steps.getAddonId.outputs.addonId }}.xliff
           fi
       - name: Upload to Crowdin
         if: ${{ !inputs.update }}
         run: |
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ inputs.repo}}.xliff
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ inputs.repo}}.pot
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonId.outputs.addonId }}.xliff
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonId.outputs.addonId }}.pot
         env:
           crowdinProjectID: ${{ vars.CROWDIN_ID }}
           crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
       - name: Update sources
         if: ${{ inputs.update }}
         run: |
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ inputs.repo }}.pot
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ inputs.repo }}.xliff
+          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonId.outputs.addonId }}.pot
+          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonId.outputs.addonId }}.xliff
         env:
           crowdinProjectID: ${{ vars.CROWDIN_ID }}
           crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}

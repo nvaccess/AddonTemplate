@@ -17,7 +17,13 @@ import difflib
 from dataclasses import dataclass
 import subprocess
 
-RAW_GITHUB_REPO_URL = "https://raw.githubusercontent.com/nvaccess/nvda"
+
+from .. import buildVars
+
+addonId = buildVars.addon_info["addonname"]
+userAccount = buildVars.userAccount
+RAW_GITHUB_REPO_URL = f"https://raw.githubusercontent.com/{userAccount}/{addonId}"
+
 re_kcTitle = re.compile(r"^(<!--\s+KC:title:\s*)(.+?)(\s*-->)$")
 re_kcSettingsSection = re.compile(r"^(<!--\s+KC:settingsSection:\s*)(.+?)(\s*-->)$")
 # Comments that span a single line in their entirety
