@@ -35,41 +35,52 @@ jobs:
           scons pot
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
-      - name: Get add-on id
-        id: getAddonId
+      - name: Get add-on info
+        id: getAddonInfo
         shell: python
         run: |
-          import os, sys
+          import os, sys, hashlib
           sys.path.insert(0, os.getcwd())
           import buildVars
           addonId = buildVars.addon_info["addon_name"]
+          i18nSources = buildVars.i18nSources
+          hasher = hashlib.sha256()
+          for file in i18nSources:
+            if os.path.isfile(file):
+              with open(file, "rb") as f:
+                while chunk := f.read(8192):
+                  hasher.update(chunk)
+          hashValue = hasher.hexdigest()
           name = 'addonId'
           value = addonId
+          name2 = 'hashValue'
+          value2 = hashValue
+          print(hashValue)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-            f.write(f"{name}={value}")
+            f.write(f"{name}={value}\n{name2}={value2}")
       - name: Generate xliff
         if: ${{ !inputs.update }}
         run: |
-          uv run ./_l10n/markdownTranslate.py generateXliff -m readme.md -o ${{ steps.getAddonId.outputs.addonId }}.xliff
+          uv run ./_l10n/markdownTranslate.py generateXliff -m readme.md -o ${{ steps.getAddonInfo.outputs.addonId }}.xliff
       - name: update xliff
         if: ${{ inputs.update }}
         run: |
-          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getAddonId.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonId.outputs.addonId }}.xliff.temp
-          mv ${{ steps.getAddonId.outputs.addonId }}.xliff.temp ${{ steps.getAddonId.outputs.addonId }}.xliff
+          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getAddonInfo.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonInfo.outputs.addonId }}.xliff.temp
+          mv ${{ steps.getAddonInfo.outputs.addonId }}.xliff.temp ${{ steps.getAddonInfo.outputs.addonId }}.xliff
           fi
       - name: Upload to Crowdin
         if: ${{ !inputs.update }}
         run: |
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonId.outputs.addonId }}.xliff
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonId.outputs.addonId }}.pot
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.xliff
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
         env:
           crowdinProjectID: ${{ vars.CROWDIN_ID }}
           crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
       - name: Update sources
         if: ${{ inputs.update }}
         run: |
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonId.outputs.addonId }}.pot
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonId.outputs.addonId }}.xliff
+          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
+          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.xliff
         env:
           crowdinProjectID: ${{ vars.CROWDIN_ID }}
           crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
