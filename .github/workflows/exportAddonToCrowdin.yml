@@ -8,9 +8,13 @@ on:
         description: 'true to update preexisting sources, false to add them from scratch'
         type: boolean
         required: false
+        default: true
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+env:
+  crowdinProjectID: ${{ vars.CROWDIN_ID }}
+  crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -39,63 +43,63 @@ jobs:
         id: getAddonInfo
         shell: python
         run: |
-          import os, sys, hashlib
+          import os, sys, json
           sys.path.insert(0, os.getcwd())
-          import buildVars
+          import buildVars, sha256
           addonId = buildVars.addon_info["addon_name"]
-          i18nSources = buildVars.i18nSources
-          hasher = hashlib.sha256()
-          for file in i18nSources:
-            if os.path.isfile(file):
-              with open(file, "rb") as f:
-                while chunk := f.read(8192):
-                  hasher.update(chunk)
-          hashValue = hasher.hexdigest()
+          readmeFile = os.path.join(os.getcwd(), "readme.md")
+          i18nSources = sorted(buildVars.i18nSources)
+          if os.path.isfile(readmeFile):
+            readmeSha = sha256.sha256_checksum([readmeFile])
+          i18nSourcesSha = sha256.sha256_checksum(i18nSources)
+          hashFile = os.path.join(os.getcwd(), "hash.json")
+          data = dict()
+          if os.path.isfile(hashFile):
+            with open(hashFile, "rt") as f:
+              data = json.load(f)
+          shouldUpdateXliff = (data.get("readmeSha") != readmeSha and data.get("readmeSha") is not None) and os.path.isfile(f"{addonId}.xliff")
+          shouldUpdatePot = (data.get("i18nSourcesSha") != i18nSourcesSha and data.get("i18nSourcesSha") is not None)
+          data = dict()
+          if readmeSha:
+            data["readmeSha"] = readmeSha
+          if i18nSourcesSha:
+            data["i18nSourcesSha"] = i18nSourcesSha
+          with open(hashFile, "wt", encoding="utf-8") as f:
+            json.dump(data, f, indent="\t", ensure_ascii=False)
           name = 'addonId'
           value = addonId
-          name2 = 'hashValue'
-          value2 = hashValue
-          print(hashValue)
+          name0 = 'shouldUpdateXliff'
+          value0 = str(shouldUpdateXliff).lower()
+          name1 = 'shouldUpdatePot'
+          value1 = str(shouldUpdatePot).lower()
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-            f.write(f"{name}={value}\n{name2}={value2}")
-      - name: Generate xliff
+            f.write(f"{name}={value}\n{name0}={value0}\n{name1}={value1}\n")
+      - name: Generate xliff and pot
         if: ${{ !inputs.update }}
         run: |
           uv run ./_l10n/markdownTranslate.py generateXliff -m readme.md -o ${{ steps.getAddonInfo.outputs.addonId }}.xliff
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.xliff
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: update xliff
-        if: ${{ inputs.update }}
+        if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdateXliff == 'true' }}
         run: |
           uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getAddonInfo.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonInfo.outputs.addonId }}.xliff.temp
           mv ${{ steps.getAddonInfo.outputs.addonId }}.xliff.temp ${{ steps.getAddonInfo.outputs.addonId }}.xliff
-          fi
-      - name: Upload to Crowdin
-        if: ${{ !inputs.update }}
-        run: |
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.xliff
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
-        env:
-          crowdinProjectID: ${{ vars.CROWDIN_ID }}
-          crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
-      - name: Update sources
-        if: ${{ inputs.update }}
+          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.xliff
+      - name: Update pot
+        if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdatePot == 'true' }}
         run: |
           uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.xliff
-        env:
-          crowdinProjectID: ${{ vars.CROWDIN_ID }}
-          crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
-      - name: Commit and push json file
+      - name: Commit and push json and xliff files
         id: commit
         run: |
           git config --local user.name github-actions
           git config --local user.email github-actions@github.com
           git status
-          git add _l10n/l10n.json
+          git add hash.json _l10n/l10n.json ${{ steps.getAddonInfo.outputs.addonId}}.xliff
           if git diff --staged --quiet; then
           echo "Nothing added to commit."
-          echo "has_changes=false" >> $GITHUB_OUTPUT
           else
-          echo "has_changes=true" >> $GITHUB_OUTPUT
-          git commit -m "Update Crowdin file ids"
+          git commit -m "Update Crowdin file ids and hashes"
           git push
           fi
