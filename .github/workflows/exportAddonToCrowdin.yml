@@ -57,7 +57,7 @@ jobs:
           if os.path.isfile(hashFile):
             with open(hashFile, "rt") as f:
               data = json.load(f)
-          shouldUpdateXliff = (data.get("readmeSha") != readmeSha and data.get("readmeSha") is not None) and os.path.isfile(f"{addonId}.xliff")
+          shouldUpdateMd = (data.get("readmeSha") != readmeSha and data.get("readmeSha") is not None) and os.path.isfile(readmeFile)
           shouldUpdatePot = (data.get("i18nSourcesSha") != i18nSourcesSha and data.get("i18nSourcesSha") is not None)
           data = dict()
           if readmeSha:
@@ -68,24 +68,25 @@ jobs:
             json.dump(data, f, indent="\t", ensure_ascii=False)
           name = 'addonId'
           value = addonId
-          name0 = 'shouldUpdateXliff'
-          value0 = str(shouldUpdateXliff).lower()
+          name0 = 'shouldUpdateMd'
+          value0 = str(shouldUpdateMd).lower()
           name1 = 'shouldUpdatePot'
           value1 = str(shouldUpdatePot).lower()
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
             f.write(f"{name}={value}\n{name0}={value0}\n{name1}={value1}\n")
-      - name: Generate xliff and pot
+      - name: Generate source files
         if: ${{ !inputs.update }}
         run: |
-          uv run ./_l10n/markdownTranslate.py generateXliff -m readme.md -o ${{ steps.getAddonInfo.outputs.addonId }}.xliff
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.xliff
+          if -f readme.md; then
+          mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
+          fi
           uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
-      - name: update xliff
-        if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdateXliff == 'true' }}
+      - name: update md
+        if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdateMd == 'true' }}
         run: |
-          uv run ./_l10n/markdownTranslate.py updateXliff -x ${{ steps.getAddonInfo.outputs.addonId }}.xliff -m readme.md -o ${{ steps.getAddonInfo.outputs.addonId }}.xliff.temp
-          mv ${{ steps.getAddonInfo.outputs.addonId }}.xliff.temp ${{ steps.getAddonInfo.outputs.addonId }}.xliff
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.xliff
+          mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
+          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.md
       - name: Update pot
         if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdatePot == 'true' }}
         run: |
@@ -96,7 +97,7 @@ jobs:
           git config --local user.name github-actions
           git config --local user.email github-actions@github.com
           git status
-          git add hash.json _l10n/l10n.json ${{ steps.getAddonInfo.outputs.addonId}}.xliff
+          git add hash.json _l10n/l10n.json 
           if git diff --staged --quiet; then
           echo "Nothing added to commit."
           else
