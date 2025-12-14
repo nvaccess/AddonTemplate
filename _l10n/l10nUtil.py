@@ -267,6 +267,14 @@ def uploadSourceFile(localFilePath: str):
 	Upload a source file to Crowdin.
 	:param localFilePath: The path to the local file to be uploaded
 	"""
+	if not os.path.isfile(L10N_FILE):
+		getFiles()
+	with open(L10N_FILE, "r", encoding="utf-8") as jsonFile:
+		files = json.load(jsonFile)
+	fileId = files.get(localFilePath)
+	if fileId is None:
+		files = getFiles()
+		fileId = files.get(localFilePath)
 	res = getCrowdinClient().storages.add_storage(
 		open(localFilePath, "rb"),
 	)
@@ -274,30 +282,41 @@ def uploadSourceFile(localFilePath: str):
 		raise ValueError("Crowdin storage upload failed")
 	storageId = res["data"]["id"]
 	print(f"Stored with ID {storageId}")
-	addonId = buildVars.addon_info["addon_name"]
-	filename = addonId
-	if os.path.splitext(filename)[1] == ".pot":
-		title = f"{os.path.splitext(filename)[0]} interface"
-		exportPattern = f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{os.path.splitext(filename)[0]}.po"
-	else:
-		title = f"{os.path.splitext(filename)[0]} documentation"
-		exportPattern = f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{filename}"
-	exportOptions = {
-		"exportPattern": exportPattern,
-	}
-	print(f"Exporting source file {localFilePath} from storage with ID {storageId}")
-	res = getCrowdinClient().source_files.add_file(
-		storageId=storageId,
-		projectId=CROWDIN_PROJECT_ID,
-		name=filename,
-		title=title,
-		exportOptions=exportOptions,
-	)
-	getFiles()
-	print("Done")
+	filename = os.path.basename(localFilePath)
+	fileId = files.get(filename)
+	print(f"File ID: {fileId}")
+	match fileId:
+		case None:
+			if os.path.splitext(filename)[1] == ".pot":
+				title = f"{os.path.splitext(filename)[0]} interface"
+				exportPattern = (
+					f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{os.path.splitext(filename)[0]}.po"
+				)
+			else:
+				title = f"{os.path.splitext(filename)[0]} documentation"
+				exportPattern = f"/{os.path.splitext(filename)[0]}/%two_letters_code%/{filename}"
+			exportOptions = {
+				"exportPattern": exportPattern,
+			}
+			print(f"Exporting source file {localFilePath} from storage with ID {storageId}")
+			res = getCrowdinClient().source_files.add_file(
+				storageId=storageId,
+				projectId=CROWDIN_PROJECT_ID,
+				name=filename,
+				title=title,
+				exportOptions=exportOptions,
+			)
+			print("Done")
+		case _:
+			res = getCrowdinClient().source_files.update_file(
+				fileId=fileId,
+				storageId=storageId,
+				projectId=CROWDIN_PROJECT_ID,
+			)
 
 
-def getFiles() -> None:
+
+def getFiles() -> dict[str, int]:
 	"""Gets files from Crowdin, and write them to a json file."""
 
 	addonId = buildVars.addon_info["addon_name"]
@@ -314,6 +333,7 @@ def getFiles() -> None:
 		dictionary[name] = id
 	with open(L10N_FILE, "w", encoding="utf-8") as jsonFile:
 		json.dump(dictionary, jsonFile, ensure_ascii=False)
+	return dictionary
 
 
 def uploadTranslationFile(crowdinFilePath: str, localFilePath: str, language: str):
