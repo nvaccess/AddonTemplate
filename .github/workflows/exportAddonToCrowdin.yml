@@ -77,10 +77,8 @@ jobs:
       - name: Generate source files
         if: ${{ !inputs.update }}
         run: |
-          if -f readme.md; then
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
           uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
-          fi
           uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: update md
         if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdateMd == 'true' }}
@@ -91,13 +89,13 @@ jobs:
         if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdatePot == 'true' }}
         run: |
           uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
-      - name: Commit and push json and xliff files
+      - name: Commit and push json 
         id: commit
         run: |
           git config --local user.name github-actions
           git config --local user.email github-actions@github.com
           git status
-          git add hash.json _l10n/l10n.json 
+          git add _l10n/l10n.json 
           if git diff --staged --quiet; then
           echo "Nothing added to commit."
           else
