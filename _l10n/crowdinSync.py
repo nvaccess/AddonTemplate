@@ -79,7 +79,7 @@ def main():
 		"uploadSourceFile",
 		help="Upload a source file to Crowdin.",
 	)
-	# uploadCommand.add_argument("crowdinFileID", type=int, help="The Crowdin file ID.")
+
 	uploadCommand.add_argument("localFilePath", help="The path to the local file.")
 	args = parser.parse_args()
 	if args.command == "uploadSourceFile":
