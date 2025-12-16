@@ -1,6 +1,6 @@
 # A part of NonVisual Desktop Access (NVDA)
 # based on file from https://github.com/jcsteh/osara
-# Copyright (C) 2023-2024 NV Access Limited, James Teh
+# Copyright (C) 2023-2025 NV Access Limited, James Teh
 # This file may be used under the terms of the GNU General Public License, version 2 or later.
 # For more details see: https://www.gnu.org/licenses/gpl-2.0.html
 
