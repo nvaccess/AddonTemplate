@@ -157,9 +157,6 @@ For example, you may want to use this [Crowdin project to translate NVDA add-ons
 Then, to export your add-on to Crowdin for the first time, run the `.github/workflows/exportAddonsToCrowdin.yml`, ensuring that the update option is set to false.
 When you have updated messages or documentation, run the workflow setting update to true (which is the default option).
 
-
-
-
 ### Additional tools
 
 The template includes configuration files for use with additional tools such as linters. These include:
