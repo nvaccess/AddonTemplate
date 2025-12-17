@@ -37,7 +37,7 @@ jobs:
         id: getAddonInfo
         run: uv run ./.github/workflows/setOutputs.py
       - name: Upload md from scratch
-        if: ${{ steps.getAddonInfo.outputs.shouldUpdateMd == 'false' }}
+        if: ${{ steps.getAddonInfo.outputs.shouldAddMdFromScratch == 'true' }}
         run: |
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
           uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
@@ -47,7 +47,7 @@ jobs:
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
           uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.md
       - name: Upload pot from scratch
-        if: ${{ steps.getAddonInfo.outputs.shouldUpdatePot == 'false' }}
+        if: ${{ steps.getAddonInfo.outputs.shouldAddPotFromScratch == 'true' }}
         run: |
           uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: Update pot
