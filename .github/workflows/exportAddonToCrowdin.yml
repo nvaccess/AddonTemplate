@@ -3,12 +3,6 @@ name: Export add-on to Crowdin
 on:
 
   workflow_dispatch:
-    inputs:
-      update:
-        description: 'true to update preexisting sources, false to add them from scratch'
-        type: boolean
-        required: false
-        default: true
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -42,19 +36,22 @@ jobs:
       - name: Get add-on info
         id: getAddonInfo
         run: uv run ./.github/workflows/setOutputs.py
-      - name: Generate source files
-        if: ${{ !inputs.update }}
+      - name: Upload md from scratch
+        if: ${{ steps.getAddonInfo.outputs.shouldUpdateMd == 'false' }}
         run: |
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
           uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: update md
-        if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdateMd == 'true' }}
+        if: ${{ steps.getAddonInfo.outputs.shouldUpdateMd == 'true' }}
         run: |
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
           uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.md
+      - name: Upload pot from scratch
+        if: ${{ steps.getAddonInfo.outputs.shouldUpdatePot == 'false' }}
+        run: |
+          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: Update pot
-        if: ${{ inputs.update && steps.getAddonInfo.outputs.shouldUpdatePot == 'true' }}
+        if: ${{ steps.getAddonInfo.outputs.shouldUpdatePot == 'true' }}
         run: |
           uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: Commit and push json 

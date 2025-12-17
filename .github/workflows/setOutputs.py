@@ -21,6 +21,9 @@ def main():
 			data = json.load(f)
 		shouldUpdateMd = (data.get("readmeSha") != readmeSha and data.get("readmeSha") is not None) and os.path.isfile(readmeFile)
 		shouldUpdatePot = (data.get("i18nSourcesSha") != i18nSourcesSha and data.get("i18nSourcesSha") is not None)
+	else:
+		shouldUpdateMd = False
+		shouldUpdatePot = False
 	data = dict()
 	if readmeSha:
 		data["readmeSha"] = readmeSha
