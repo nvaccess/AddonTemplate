@@ -1,5 +1,5 @@
 dependencies = [
-	"crowdin-api-client==1.21.0",
+	"crowdin-api-client==1.24.1",
 	"lxml>=6.0.2",
 	"markdown-link-attr-modifier==0.2.1",
 	"mdx-gh-links==0.4",
