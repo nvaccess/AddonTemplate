@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout add-on
         uses: actions/checkout@v6
+        with:
+          submodules: true
       - name: "Set up Python"
         uses: actions/setup-python@v6
         with:
@@ -27,40 +29,41 @@ jobs:
           pip install scons markdown
           sudo apt update
           sudo apt install gettext
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
       - name: Build add-on and pot file
         run: |
           scons
           scons pot
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v7
       - name: Get add-on info
         id: getAddonInfo
         run: uv run ./.github/workflows/setOutputs.py
       - name: Upload md from scratch
         if: ${{ steps.getAddonInfo.outputs.shouldAddMdFromScratch == 'true' }}
         run: |
+          echo "Yes"
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
+          uv run ./_l10n/source/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
       - name: update md
         if: ${{ steps.getAddonInfo.outputs.shouldUpdateMd == 'true' }}
         run: |
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.md
+          uv run ./_l10n/source/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.md
       - name: Upload pot from scratch
         if: ${{ steps.getAddonInfo.outputs.shouldAddPotFromScratch == 'true' }}
         run: |
-          uv run ./_l10n/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
+          uv run ./_l10n/source/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: Update pot
         if: ${{ steps.getAddonInfo.outputs.shouldUpdatePot == 'true' }}
         run: |
-          uv run ./_l10n/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
-      - name: Commit and push json 
+          uv run ./_l10n/source/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
+      - name: Commit and push json
         id: commit
         run: |
           git config --local user.name github-actions
           git config --local user.email github-actions@github.com
           git status
-          git add _l10n/l10n.json 
+          git add *.json
           if git diff --staged --quiet; then
           echo "Nothing added to commit."
           else
