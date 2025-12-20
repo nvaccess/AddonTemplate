@@ -164,7 +164,6 @@ reportPropertyTypeMismatch = true
 reportRedeclaration = true
 reportReturnType = true
 reportSelfClsParameterName = true
-reportShadowedImports = true
 reportTypeCommentUsage = true
 reportTypedDictNotRequiredAccess = true
 reportUnboundVariable = true
@@ -203,9 +202,3 @@ reportMissingTypeStubs = false
 
 # Bad rules
 # These are sorted alphabetically and should be enabled and moved to compliant rules section when resolved.
-lint = [
-	"ruff==0.8.1",
-	"pre-commit==4.0.1",
-	"pyright==1.1.396",
-]
-
