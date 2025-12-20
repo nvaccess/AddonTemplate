@@ -60,6 +60,7 @@ exclude = [
 	"sconstruct",
 	".git",
 	"__pycache__",
+	"_l10n",
 	# When excluding concrete paths relative to a directory,
 	# not matching multiple folders by name e.g. `__pycache__`,
 	# paths are relative to the configuration file.
