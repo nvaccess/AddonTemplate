@@ -80,7 +80,7 @@ logger-objects = ["logHandler.log"]
 "sconstruct" = ["F821"]
 
 [tool.pyright]
-venvPath = "../nvda/.venv"
+venvPath = ".venv"
 venv = "."
 pythonPlatform = "Windows"
 typeCheckingMode = "strict"
