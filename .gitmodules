@@ -1,0 +1,4 @@
+[submodule "_l10n"]
+	path = _l10n
+	url = https://github.com/nvdaes/nvdaL10n
+	branch = addonTemplate
