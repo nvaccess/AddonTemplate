@@ -1,4 +1,5 @@
 dependencies = [
+	"uv==0.9.11",
 	"SCons==4.10.1",
 	"Markdown==3.10",
 	"ruff==0.14.5",
