@@ -41,7 +41,6 @@ jobs:
       - name: Upload md from scratch
         if: ${{ steps.getAddonInfo.outputs.shouldAddMdFromScratch == 'true' }}
         run: |
-          echo "Yes"
           mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
           uv run ./_l10n/source/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
       - name: update md
