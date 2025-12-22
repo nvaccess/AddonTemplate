@@ -13,11 +13,13 @@ env:
   crowdinProjectID: 780748 
   crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
   downloadTranslationsBranch: l10n
+  GH_TOKEN: ${{ github.token }}
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Checkout add-on
         uses: actions/checkout@v6
@@ -103,7 +105,5 @@ jobs:
           git commit -m "Update translations for ${{ steps.getAddonInfo.outputs.addonId }}"
           git checkout -b ${{ env.downloadTranslationsBranch }}
           git push -f --set-upstream origin ${{ env.downloadTranslationsBranch }}
-          gh pr create --base ${{ env.GITHUB_DEFAULT_BRANCH }} --head ${{ env.downloadTranslationsBranch }}
-          --title "Update tracked translations from Crowdin" \
-          --body "This pull request updates translations to languages being tracked from Crowdin."
           fi
+
