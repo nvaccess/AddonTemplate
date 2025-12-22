@@ -13,13 +13,11 @@ env:
   crowdinProjectID: 780748 
   crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
   downloadTranslationsBranch: l10n
-  GH_TOKEN: ${{ github.token }}
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - name: Checkout add-on
         uses: actions/checkout@v6
