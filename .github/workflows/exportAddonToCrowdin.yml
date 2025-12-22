@@ -29,10 +29,6 @@ jobs:
           sudo apt install gettext
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
-      - name: Run pre-commit
-        run: |
-          # Ensure uv environment is up to date.
-          uv run pre-commit run uv-lock --all-files
       - name: Build add-on and pot file
         run: |
           uv run scons
