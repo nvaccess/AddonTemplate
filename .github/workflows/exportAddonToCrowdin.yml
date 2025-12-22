@@ -9,6 +9,7 @@ concurrency:
 env:
   crowdinProjectID: ${{ vars.CROWDIN_ID }}
   crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
+  downloadTranslationsBranch: l10n
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -66,4 +67,37 @@ jobs:
           else
           git commit -m "Update Crowdin file ids and hashes"
           git push
+          fi
+      - name: Download translations from Crowdin
+        run: |
+          uv run _l10n/source/l10nUtil.py exportTranslations -o _addonL10n
+          mkdir -p addon/locale
+          mkdir -p addon/doc
+          for dir in _addonL10n/${{ steps.getAddonInfo.outputs.addonId }}/*; do
+          echo "Processing: $dir"
+          if [ -d "$dir" ]; then
+          langCode=$(basename "$dir")
+          poFile="$dir/${{ steps.getAddonInfo.outputs.addonId }}.po"
+          if [ -f "$poFile" ]; then
+          mkdir -p "addon/locale/$langCode/LC_MESSAGES"
+          echo "Moving $poFile to addon/locale/$langCode/LC_MESSAGES/nvda.po"
+          mv "$poFile" "addon/locale/$langCode/LC_MESSAGES/nvda.po"
+          fi
+          mdFile="$dir/${{ steps.getAddonInfo.outputs.addonId }}.md"
+          if [ -f "$mdFile" ]; then
+          mkdir -p "addon/doc/$langCode"
+          echo "Moving $mdFile to addon/doc/$langCode/readme.md"
+          mv "$mdFile" "addon/doc/$langCode/readme.md"
+          fi
+          else
+          echo "Skipping invalid directory: $dir"
+          fi
+          done
+          git add addon/locale addon/doc
+          if git diff --staged --quiet; then
+          echo "Nothing added to commit."
+          else
+          git commit -m "Update translations for ${{ steps.getAddonInfo.outputs.addonId }}"
+          git checkout -b ${{ env.downloadTranslationsBranch }}
+          git push -f --set-upstream origin ${{ env.downloadTranslationsBranch }}
           fi
