@@ -76,7 +76,10 @@ repos:
       args: [ --fix ]
     - id: ruff-format
       name: format with ruff
-
+    - id: uv-lock
+      name: Verify uv lock file
+      # Override python interpreter from .python-versions as that is too strict for pre-commit.ci
+      args: ["-p3.13"]
 - repo: local
   hooks:
 

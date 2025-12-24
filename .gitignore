@@ -1,11 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Files generated for add-ons
 addon/doc/*.css
 addon/doc/en/
 *_docHandler.py
 *.html
-manifest.ini
+addon/*.ini
+addon/locale/*/*.ini
 *.mo
 *.pot
-*.py[co]
+*.pyc
 *.nvda-addon
 .sconsign.dblite
-/[0-9]*.[0-9]*.[0-9]*.json
