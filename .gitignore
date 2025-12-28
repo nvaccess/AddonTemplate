@@ -21,3 +21,6 @@ addon/locale/*/*.ini
 *.pyc
 *.nvda-addon
 .sconsign.dblite
+
+# act configuration
+.actrc

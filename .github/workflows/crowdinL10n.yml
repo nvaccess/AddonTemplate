@@ -35,17 +35,19 @@ jobs:
           python-version-file: ".python-version"
       - name: Install gettext
         run: |
-          sudo apt update
-          sudo apt install gettext
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gettext
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v7
+      - name: Install dependencies
+        run: uv pip install --system scons markdown
       - name: Build add-on and pot file
         run: |
-          uv run scons
-          uv run scons pot
+          uv run --with scons --with markdown scons
+          uv run --with scons --with markdown scons pot
       - name: Get add-on info
         id: getAddonInfo
-        run: uv run ./.github/workflows/setOutputs.py
+        run: uv run --with scons --with markdown ./.github/workflows/setOutputs.py
       - name: Upload md from scratch
         if: ${{ steps.getAddonInfo.outputs.shouldAddMdFromScratch == 'true' && inputs.dry-run != true }}
         run: |
@@ -65,6 +67,7 @@ jobs:
         run: |
           uv run ./_l10n/source/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
       - name: Commit and push json
+        if: ${{ inputs.dry-run != true }}
         id: commit
         run: |
           git config --local user.name github-actions
