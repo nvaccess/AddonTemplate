@@ -43,6 +43,17 @@ In addition, this template includes configuration files for the following tools 
 	* Press `control+shift+p` to open the commands palette and search for recommended extensions to install or check if they are installed.
 * Pyright (pyproject.toml/tool.pyright sections): a Python static type checker. Sections starting with tool.pyright house configuration options for Pyright.
 
+
+## Automatic checks on GitHub
+
+
+### Pre-commit
+
+It's recommended to install pre-commit.ci [pre-commit](https://pre-commit.ci) on personal GitHub accounts.
+Then, you can choose if pre-commit will be used in all or just in selected repos.
+
+Setting up pre-commit.ci for each add-on using the add-on template will help you maintain a consistent code style in your add-ons.
+
 ## Requirements
 
 You need the following software to use this code for your NVDA add-on development and packaging:
