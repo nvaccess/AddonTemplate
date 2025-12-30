@@ -43,9 +43,7 @@ In addition, this template includes configuration files for the following tools 
 	* Press `control+shift+p` to open the commands palette and search for recommended extensions to install or check if they are installed.
 * Pyright (pyproject.toml/tool.pyright sections): a Python static type checker. Sections starting with tool.pyright house configuration options for Pyright.
 
-
 ## Automatic checks on GitHub
-
 
 ### Pre-commit
 
