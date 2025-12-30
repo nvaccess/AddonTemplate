@@ -156,6 +156,17 @@ Note: you must fill out this dictionary if at least one custom symbol dictionary
 	* channel: update channel (do not use this switch unless you know what you are doing).
 	* dev: suitable for development builds, names the add-on according to current date (yyyymmdd) and sets update channel to "dev".
 
+
+### Translation workflow
+
+You can add the documentation and interface messages of your add-on to be translated in Crowdin.
+
+You need a Crowdin account and an API token with permissions to push to a Crowdin project.
+For example, you may want to use this [Crowdin project to translate NVDA add-ons](https://crowdin.com/project/nvdaaddons).
+
+Then, to export your add-on to Crowdin for the first time, run the `.github/workflows/exportAddonsToCrowdin.yml`, ensuring that the update option is set to false.
+When you have updated messages or documentation, run the workflow setting update to true (which is the default option).
+
 ### Additional tools
 
 The template includes configuration files for use with additional tools such as linters. These include:
