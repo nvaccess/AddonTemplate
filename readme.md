@@ -36,11 +36,21 @@ In addition, this template includes configuration files for the following tools 
 * Ruff (pyproject.toml/tool.ruff sections): a Python linter written in Rust. Sections starting with tool.ruff house configuration options for Ruff.
 * Configuration for VS Code. It requires NVDA's repo at the same level as the add-on folder containing your actual source files, with prepared source code (`scons source`). preparing the source code is a step in the instructions for building NVDA itself, see [The NVDA Repository](https://github.com/nvaccess/nvda) for details.
 	* Place the .vscode in this repo within the addon folder, where your add-on source files (will) reside. The settings file within this folder assumes the NVDA repository is within the parent folder of this folder. If your addon folder is within the addonTemplate folder, then your NVDA repository folder needs to also be within the addonTemplate folder, or the source will not be found.
-	* Open the addon folder in VS Code. This should initialize VS Code with the correct settings and provide you with code completion and other VS Code features. 
+	* Open the addon folder in VS Code.
+	This should initialize VS Code with the correct settings and provide you with code completion and other VS Code features.
 	* Press `control+shift+m` after saving a file to search for problems.
 	* Use arrow and tab keys for the autocompletion feature.
 	* Press `control+shift+p` to open the commands palette and search for recommended extensions to install or check if they are installed.
 * Pyright (pyproject.toml/tool.pyright sections): a Python static type checker. Sections starting with tool.pyright house configuration options for Pyright.
+
+## Automatic checks on GitHub
+
+### Pre-commit
+
+It's recommended to install pre-commit.ci [pre-commit](https://pre-commit.ci) on personal GitHub accounts.
+Then, you can choose if pre-commit will be used in all or just in selected repos.
+
+Setting up pre-commit.ci for each add-on using the add-on template will help you maintain a consistent code style in your add-ons.
 
 ## Requirements
 
@@ -108,7 +118,7 @@ In addition, the following information must be filled out (not used in the manif
 
 ##### Custom add-on information
 
-In addition to the core manifest data, custom add-on information can be specified. 
+In addition to the core manifest data, custom add-on information can be specified.
 
 ###### Braille translation tables
 
