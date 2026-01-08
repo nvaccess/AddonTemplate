@@ -1,0 +1,116 @@
+name: Crowdin l10n
+
+on:
+
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run mode (skip Crowdin upload/download)'
+        required: false
+        type: boolean
+        default: false
+  schedule:
+    # Every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  crowdinProjectID: 780748 
+  crowdinAuthToken: ${{ secrets.CROWDIN_TOKEN }}
+  downloadTranslationsBranch: l10n
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout add-on
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: "Set up Python"
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: ".python-version"
+      - name: Install gettext
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq gettext
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v7
+      - name: Install dependencies
+        run: uv pip install --system scons markdown
+      - name: Build add-on and pot file
+        run: |
+          uv run --with scons --with markdown scons
+          uv run --with scons --with markdown scons pot
+      - name: Get add-on info
+        id: getAddonInfo
+        run: uv run --with scons --with markdown ./.github/workflows/setOutputs.py
+      - name: Upload md from scratch
+        if: ${{ steps.getAddonInfo.outputs.shouldAddMdFromScratch == 'true' && inputs.dry-run != true }}
+        run: |
+          mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
+          uv run ./_l10n/source/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.md
+      - name: update md
+        if: ${{ steps.getAddonInfo.outputs.shouldUpdateMd == 'true' && inputs.dry-run != true }}
+        run: |
+          mv readme.md ${{ steps.getAddonInfo.outputs.addonId }}.md
+          uv run ./_l10n/source/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.md
+      - name: Upload pot from scratch
+        if: ${{ steps.getAddonInfo.outputs.shouldAddPotFromScratch == 'true' && inputs.dry-run != true }}
+        run: |
+          uv run ./_l10n/source/l10nUtil.py uploadSourceFile --localFilePath=${{ steps.getAddonInfo.outputs.addonId }}.pot
+      - name: Update pot
+        if: ${{ steps.getAddonInfo.outputs.shouldUpdatePot == 'true' && inputs.dry-run != true }}
+        run: |
+          uv run ./_l10n/source/crowdinSync.py uploadSourceFile ${{ steps.getAddonInfo.outputs.addonId }}.pot
+      - name: Commit and push json
+        if: ${{ inputs.dry-run != true }}
+        id: commit
+        run: |
+          git config --local user.name github-actions
+          git config --local user.email github-actions@github.com
+          git status
+          git add *.json
+          if git diff --staged --quiet; then
+          echo "Nothing added to commit."
+          else
+          git commit -m "Update Crowdin file ids and hashes"
+          git push
+          fi
+      - name: Download translations from Crowdin
+        if: ${{ inputs.dry-run != true }}
+        run: |
+          uv run _l10n/source/l10nUtil.py exportTranslations -o _addonL10n
+          mkdir -p addon/locale
+          mkdir -p addon/doc
+          for dir in _addonL10n/${{ steps.getAddonInfo.outputs.addonId }}/*; do
+          echo "Processing: $dir"
+          if [ -d "$dir" ]; then
+          langCode=$(basename "$dir")
+          poFile="$dir/${{ steps.getAddonInfo.outputs.addonId }}.po"
+          if [ -f "$poFile" ]; then
+          mkdir -p "addon/locale/$langCode/LC_MESSAGES"
+          echo "Moving $poFile to addon/locale/$langCode/LC_MESSAGES/nvda.po"
+          mv "$poFile" "addon/locale/$langCode/LC_MESSAGES/nvda.po"
+          fi
+          mdFile="$dir/${{ steps.getAddonInfo.outputs.addonId }}.md"
+          if [ -f "$mdFile" ]; then
+          mkdir -p "addon/doc/$langCode"
+          echo "Moving $mdFile to addon/doc/$langCode/readme.md"
+          mv "$mdFile" "addon/doc/$langCode/readme.md"
+          fi
+          else
+          echo "Skipping invalid directory: $dir"
+          fi
+          done
+          git add addon/locale addon/doc
+          if git diff --staged --quiet; then
+          echo "Nothing added to commit."
+          else
+          git commit -m "Update translations for ${{ steps.getAddonInfo.outputs.addonId }}"
+          git checkout -b ${{ env.downloadTranslationsBranch }}
+          git push -f --set-upstream origin ${{ env.downloadTranslationsBranch }}
+          fi
