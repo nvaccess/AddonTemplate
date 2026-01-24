@@ -1,0 +1,27 @@
+name: NVDA l10n
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  nvdaL10n:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+        submodules: true
+    - name: Create executable
+      run: |
+        pyInstaller --onefile _l10n/source/l10nUtil.py
