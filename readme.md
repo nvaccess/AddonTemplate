@@ -142,6 +142,16 @@ Information on custom symbol dictionaries must be specified in buildVars under `
 
 Note: you must fill out this dictionary if at least one custom symbol dictionary is included in the add-on. If not, leave the dictionary empty.
 
+###### Speech pronunciation dictionaries
+
+Information on custom speech (pronunciation) dictionaries must be specified in buildVars under `speechDictionaries` dictionary as follows:
+
+* Dictionary name (string key for a nested dictionary): each `symbolDictionaries` entry is a name for the included custom speech dictionary placed in `speechDicts` folder inside `addon` folder. The file is named `<dictionary_name>.dic`. This nested dictionary should specify:
+	* displayName (string): the name of the dictionary shown to users and is translatable.
+	* mandatory (True/False): Always enabled (True) or optional and visible in the GUI (False)
+
+Note: you must fill out this dictionary if at least one custom speech dictionary is included in the add-on. If not, leave the dictionary empty.
+
 ### To manage documentation files for your addon:
 
 1. Copy the `readme.md` file for your add-on to the first created folder, where you copied `buildVars.py`. You can also copy `style.css` to improve the presentation of HTML documents.
