@@ -108,5 +108,5 @@ symbolDictionaries: SymbolDictionaries = {}
 # Each key is the name of the dictionary,
 # with keys inside recording the following attributes:
 # displayName (name of the speech dictionary shown to users and translatable),
-# mandatory (True when always enabled, False when not.
+# mandatory (True when always enabled, False when not).
 speechDictionaries: SpeechDictionaries = {}
