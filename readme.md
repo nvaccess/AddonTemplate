@@ -146,11 +146,14 @@ Note: you must fill out this dictionary if at least one custom symbol dictionary
 
 Information on custom speech (pronunciation) dictionaries must be specified in buildVars under `speechDictionaries` dictionary as follows:
 
-* Dictionary name (string key for a nested dictionary): each `symbolDictionaries` entry is a name for the included custom speech dictionary placed in `speechDicts` folder inside `addon` folder. The file is named `<dictionary_name>.dic`. This nested dictionary should specify:
+* Dictionary name (string key for a nested dictionary): each `symbolDictionaries` entry is a name for the included custom speech dictionary placed in `speechDicts` folder inside `addon` folder.
+The file is named `<dictionary_name>.dic`.
+This nested dictionary should specify:
 	* displayName (string): the name of the dictionary shown to users and is translatable.
 	* mandatory (True/False): Always enabled (True) or optional and visible in the GUI (False)
 
-Note: you must fill out this dictionary if at least one custom speech dictionary is included in the add-on. If not, leave the dictionary empty.
+Note: you must fill out this dictionary if at least one custom speech dictionary is included in the add-on.
+If not, leave the dictionary empty.
 
 ### To manage documentation files for your addon:
 
