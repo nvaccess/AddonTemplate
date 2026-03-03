@@ -5,12 +5,9 @@ on:
     tags: ["*"]
     # To build on main/master branch, uncomment the following line:
     # branches: [ main , master ]
-    paths:
-    - addon/**
+
   pull_request:
     branches: [ main, master ]
-    paths:
-    - addon/**
 
   workflow_dispatch:
 
