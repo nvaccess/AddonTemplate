@@ -40,7 +40,14 @@ jobs:
         name: packaged_addon
         path: |
           ./*.nvda-addon
+        archive: false
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: translation_template
+        path: |
           ./*.pot
+        archive: false
 
   upload_release:
     runs-on: ubuntu-latest
@@ -50,8 +57,11 @@ jobs:
       contents: write
     steps:
     - uses: actions/checkout@v6
-    - name: download releases files
+    - name: download all artifacts
       uses: actions/download-artifact@v8
+      with:
+        path: .
+        merge-multiple: true
     - name: Display structure of downloaded files
       run: ls -R
     - name: Calculate sha256
