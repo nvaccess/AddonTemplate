@@ -58,7 +58,10 @@ You need the following software to use this code for your NVDA add-on developmen
 
 * a Python distribution (3.13 64-bit or later is recommended). Check the [Python Website](https://www.python.org) for Windows Installers.
 * Scons - [Website](https://www.scons.org/) - version 4.10.1 or later. You can install it via PIP.
-* GNU Gettext tools, if you want to have localization support for your add-on - Recommended. Any Linux distro or cygwin have those installed. You can find windows builds [here](https://mlocati.github.io/articles/gettext-iconv-windows.html).
+* GNU Gettext tools (recommended).
+Needed if you want to have localization support for your add-on.
+Any Linux distro or cygwin have those installed.
+You can find Windows builds [here](https://mlocati.github.io/articles/gettext-iconv-windows.html).
 * Markdown 3.8.2 or later, if you want to convert documentation files to HTML documents. You can install it via PIP.
 * Optional: additional tools such as linters and type checkers defined in pyproject.toml file.
 
