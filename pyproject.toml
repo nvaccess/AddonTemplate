@@ -25,7 +25,6 @@ dependencies = [
 	"scons==4.10.1",
 	"Markdown==3.10",
 	# Translations management
-	"requests==2.33.0",
 	"nh3==0.3.2",
 	"crowdin-api-client==1.24.1",
 	"lxml==6.1.0",
@@ -102,6 +101,7 @@ exclude = [
 	"__pycache__",
 	".venv",
 	"site_scons",
+	".github/scripts",
 	# When excluding concrete paths relative to a directory,
 	# not matching multiple folders by name e.g. `__pycache__`,
 	# paths are relative to the configuration file.

@@ -177,6 +177,40 @@ If not, leave the dictionary empty.
 	* channel: update channel (do not use this switch unless you know what you are doing).
 	* dev: suitable for development builds, names the add-on according to current date (yyyymmdd) and sets update channel to "dev".
 
+
+### Translation workflow
+
+This template allows you to automate the synchronization of documentation and interface messages with Crowdin.
+
+#### 1. Crowdin Project Setup
+
+You need a Crowdin account and an API token with permissions to manage a project.
+If you wish to use the community project [Crowdin project to translate NVDA add-ons](https://crowdin.com/project/nvdaaddons):
+
+* **Request Access:** Send a message to the [NVDA translation mailing list](https://groups.io/g/nvda-translations) (**nvda-translations@groups.io**), or in the [NVDA Add-ons Mailing List](https://groups.io/g/nvda-addons) (**nvda-addons@groups.io**), requesting an invitation to join the project as a developer.
+* **API Token:** Once invited, generate an API token in your Crowdin account settings.
+
+#### 2. GitHub Secrets
+To allow the workflows to communicate with Crowdin, you must add the following secrets to your GitHub repository (`Settings > Secrets and variables > Actions`):
+* `CROWDIN_TOKEN`: Paste your Crowdin API token here.
+
+Optionally, if you don't want to use the [Crowdin community project](https://crowdin.com/project/nvdaaddons), please add the following variables:
+
+* `CROWDIN_PROJECT_ID`: Paste the project ID of your Crowdin project.
+* L10N_UTIL_CONFIG: The path to the yaml file containing the configuration for the l10nUtil.exe file, used by the translation scripts.
+For more details, visit the [nvdaL10n repositori](https://github.com/nvaccess/nvdaL10n).
+
+#### 3. Infrastructure
+Ensure that your repository includes the following files (provided in this template):
+* **Workflows:** `.github/workflows/crowdinL10n.yml`
+* **Scripts:** The `.github/scripts/` folder containing `checkTranslation.py`, `markdownTranslate.py`, `languageMappings.json`, `setOutputs.py`, and `crowdinSync.ps1`.
+
+#### 4. Running the Workflow
+
+The translation workflow will be run weekly. Also, you can run the workflow manually from GitHub or using GitHub CLI.
+
+If you have various add-ons, please edit the cron line of workflows in each repo, so that your API token is not used at the same time.
+
 ### Additional tools
 
 The template includes configuration files for use with additional tools such as linters. These include:
