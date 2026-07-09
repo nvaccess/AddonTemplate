@@ -27,7 +27,6 @@ def deepMergeDicts(dictProj: dict[str, Any], dictTpl: dict[str, Any]) -> dict[st
 	:param dictTpl: The template dictionary whose values will be merged into dictProj.
 	:return: The updated dictProj with merged values from dictTpl.
 	"""
-
 	for key, value in dictTpl.items():
 		if key in dictProj:
 			if isinstance(dictProj[key], dict) and isinstance(value, dict):
@@ -49,7 +48,6 @@ def extractBuildvarsMetadata(filePath: str | Path) -> tuple[dict[str, Any], dict
 	:param filePath: The path to the buildVars.py file.
 	:return: A tuple containing two dictionaries: metadata and globalVars.
 	"""
-
 	p = Path(filePath)
 	if not p.exists():
 		return {}, {}
@@ -118,7 +116,6 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, dryRun: bool =
 	:param dryRun: If True, simulate the merge without writing changes to disk.
 	:return: A string indicating the result of the merge operation.
 	"""
-
 	pTpl = Path(tplPath)
 	pProj = Path(projPath)
 
@@ -218,7 +215,6 @@ def mergeBuildvarsFile(
 		:param dryRun: If True, simulate the merge without writing changes to disk.
 	:Return: A string indicating the result of the merge operation.
 	"""
-
 	pTpl = Path(tplPath)
 	pProj = Path(projPath)
 
