@@ -245,3 +245,46 @@ If you committed changes, you can use:
 ```sh
 git reset --hard {cleanBranch}
 ```
+
+## Alternative: Automated Update Using the Companion Tool
+
+To streamline this process and avoid dealing with painful syntax errors or merge conflicts in metadata files, a companion update script is included within the template workspace at `updateAddon.py`.
+
+This script automatically handles the extraction of old metadata, cleans template placeholder data (such as removing `nvaccess` from authors lists if it's a third-party add-on), and merges `pyproject.toml` structures while fully preserving custom constraints and formatting.
+
+### Prerequisites for the script
+Before running the tool, ensure your system meets the following requirements:
+* **Python**: Version **3.11 or higher** must be installed on your PC.
+* **Git**: Git must be installed and available in your system's PATH.
+
+### Running the automated tool
+
+The script is highly flexible and can be executed either from the root of your repository or from **any other directory** on your computer.
+
+1. Ensure your current branch is clean (`git status`).
+2. Fetch the latest template changes from the remote:
+
+```
+git fetch Template
+```
+
+3. Run the automated script through `uv` (directly from the repository root):
+
+```
+uv run updateAddon.py
+```
+
+*Note: The script safely generates an un-tracked `_bak_` backup directory of your infrastructure files before applying any changes, allowing a seamless recovery if needed.*
+
+4. Verify that the add-on builds properly:
+```
+uv sync
+uv run scons
+```
+
+5. Stage the files and commit the update:
+
+```
+git add .
+git commit -m "chore: sync infrastructure with AddonTemplate"
+```
