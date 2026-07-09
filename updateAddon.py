@@ -353,6 +353,12 @@ def main() -> None:
 
 	print("[*] Phase 3: Provisioning latest official NVDA AddonTemplate via Git...")
 
+	# List of template-relative paths to ignore during synchronization (requested by @CyrilleB79)
+	# Lowercase paths are used to prevent case mismatch issues across OS environments
+	IGNORED_FILES = {
+		os.path.join(".github", "workflows", "build_addon.yml").lower(),
+	}
+
 	with tempfile.TemporaryDirectory() as tempDir:
 		print("[*] Cloning template into temporary workspace...")
 		templateUrl = "https://github.com/nvaccess/AddonTemplate.git"
@@ -386,6 +392,16 @@ def main() -> None:
 		}
 		syncReport = []
 
+		# Custom ignore handler for shutil.copytree to filter subdirectories and files
+		def tree_ignore_handler(path: str, names: list[str]) -> list[str]:
+			ignored = []
+			for name in names:
+				full_sub_path = os.path.join(path, name)
+				rel_sub_path = os.path.relpath(full_sub_path, start=tempDir).lower()
+				if rel_sub_path in IGNORED_FILES:
+					ignored.append(name)
+			return ignored
+
 		for item in os.listdir(tempDir):
 			if item.lower() in protectedElements:
 				syncReport.append(f"{item} .................... skipped (protected scope)")
@@ -396,12 +412,18 @@ def main() -> None:
 
 			srcItem = os.path.join(tempDir, item)
 			dstItem = os.path.join(addonDir, item)
+			
+			# Check if the root item itself is explicitly ignored
+			relItemPath = os.path.relpath(srcItem, start=tempDir).lower()
+			if relItemPath in IGNORED_FILES:
+				syncReport.append(f"{item} .................... skipped (user ignored)")
+				continue
 
 			try:
 				if os.path.isdir(srcItem):
 					if not args.dryRun:
 						os.makedirs(dstItem, exist_ok=True)
-						shutil.copytree(srcItem, dstItem, dirs_exist_ok=True)
+						shutil.copytree(srcItem, dstItem, ignore=tree_ignore_handler, dirs_exist_ok=True)
 					syncReport.append(f"{item}/ ................... merged safely")
 				else:
 					if not args.dryRun:
@@ -435,8 +457,7 @@ def main() -> None:
 		else:
 			print("\n[+] Simulation finished. Workspace cleared.")
 
-	input("\nPress Enter to exit...")
-
 
 if __name__ == "__main__":
 	main()
+
