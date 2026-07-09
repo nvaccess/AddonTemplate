@@ -9,7 +9,7 @@
   git clone https://github.com/{repoName}.git
   ```
 
-1. In the folder where your add-on repository is cloned, create an `addon` submolder and store the code for your add-on.
+1. In the folder where your add-on repository is cloned, create an `addon` subfolder and store the code for your add-on.
 
 1. Go to the folder where your repository was cloned:
 
