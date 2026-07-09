@@ -412,7 +412,7 @@ def main() -> None:
 
 			srcItem = os.path.join(tempDir, item)
 			dstItem = os.path.join(addonDir, item)
-			
+
 			# Check if the root item itself is explicitly ignored
 			relItemPath = os.path.relpath(srcItem, start=tempDir).lower()
 			if relItemPath in IGNORED_FILES:
@@ -460,4 +460,3 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
-
