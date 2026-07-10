@@ -45,12 +45,15 @@ In addition, this template includes configuration files for the following tools 
 
 ## Automatic checks on GitHub
 
-### Pre-commit
+### prek
 
-It's recommended to install pre-commit.ci [pre-commit](https://pre-commit.ci) on personal GitHub accounts.
-Then, you can choose if pre-commit will be used in all or just in selected repos.
+This template uses [prek](https://github.com/j178/prek) (a fast, drop-in alternative to pre-commit) to run linting, formatting, and type-checking hooks, configured in `prek.toml`.
+`prek` is included as a development dependency, so you can run it through `uv`:
 
-Setting up pre-commit.ci for each add-on using the add-on template will help you maintain a consistent code style in your add-ons.
+* Run `uv run prek install` once to enable the git hook, so the checks run automatically on every commit.
+* Run `uv run prek run --all-files` to check all files in the repository.
+
+The provided GitHub Actions workflow (`.github/workflows/build_addon.yml`) also runs these checks on every pull request, helping you maintain a consistent code style in your add-ons.
 
 ## Requirements
 
@@ -91,7 +94,7 @@ sconstruct
 ```
 and file:
 ```
-.pre-commit-config.yaml
+prek.toml
 changelog.md
 pyproject.toml
 uv.lock
