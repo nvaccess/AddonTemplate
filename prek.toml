@@ -111,9 +111,9 @@ hooks = [
 ]
 
 [[repos]]
-# Matches Ruff version in pyproject.
+# Keep in sync with the pinned Ruff version in pyproject.toml.
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.12.7"
+rev = "v0.14.5"
 hooks = [
   {
     id = "ruff",
