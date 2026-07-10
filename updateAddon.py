@@ -179,10 +179,11 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, dryRun: bool =
 			if "dependencies" in project_section:
 				tpl_deps = project_section["dependencies"]
 
-				# Extract base package name (e.g. 'pyright' from 'pyright[nodejs]==1.1.407')
+				# Extract base package name robustly (handles !=, <=, ~=, @ URLs, markers, etc.)
 				def get_base(s: str) -> str:
-					return s.split("[")[0].split("=")[0].split(">")[0].strip().lower()
-
+					import re
+					m = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", s.strip())
+					return m.group(0).lower() if m else s.strip().lower()
 				tpl_bases = {get_base(d) for d in tpl_deps}
 
 				# Append custom user dependencies only if they are not already defined by the template
