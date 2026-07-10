@@ -21,20 +21,22 @@ TOMLKIT_AVAILABLE: bool = True
 
 
 def deepMergeDicts(dictProj: dict[str, Any], dictTpl: dict[str, Any]) -> dict[str, Any]:
-	"""Recursively merges dictTpl into dictProj. Supports both dict and tomlkit container types.
+	"""Recursively merges dictTpl into dictProj.
 
-	:param dictProj: The original dictionary to be updated.
-	:param dictTpl: The template dictionary whose values will be merged into dictProj.
-	:return: The updated dictProj with merged values from dictTpl.
+	Note: tomlkit returns custom table/array objects that behave like mappings/sequences but are not
+	instances of built-in `dict`/`list`, so we must detect by ABCs rather than concrete types.
 	"""
+	from collections.abc import MutableMapping, MutableSequence
+
 	for key, value in dictTpl.items():
 		if key in dictProj:
-			if isinstance(dictProj[key], dict) and isinstance(value, dict):
-				deepMergeDicts(dictProj[key], value)
-			elif isinstance(dictProj[key], list) and isinstance(value, list):
+			projVal = dictProj[key]
+			if isinstance(projVal, MutableMapping) and isinstance(value, MutableMapping):
+				deepMergeDicts(projVal, value)
+			elif isinstance(projVal, MutableSequence) and isinstance(value, MutableSequence):
 				for item in value:
-					if item not in dictProj[key]:
-						dictProj[key].append(item)
+					if item not in projVal:
+						projVal.append(item)
 			else:
 				pass
 		else:
@@ -242,8 +244,8 @@ def mergeBuildvarsFile(
 					if val is None:
 						formattedVal = "None"
 					elif isinstance(val, str):
-						is_multiline = key in ["addon_summary", "addon_description", "addon_changelog"]
-						formattedVal = f'_("""{val}""")' if is_multiline else f'"{val}"'
+						is_translatable = key in ["addon_summary", "addon_description", "addon_changelog"]
+						formattedVal = f"_({val!r})" if is_translatable else repr(val)
 					else:
 						formattedVal = str(val)
 
@@ -313,8 +315,14 @@ def main() -> None:
 	)
 	args = parser.parse_args()
 
-	addonDirInput = args.addonDir if args.addonDir else os.getcwd()
-	addonDir = os.path.abspath(addonDirInput)
+	addonDirInput = args.addonDir
+	if addonDirInput:
+		addonDir = os.path.abspath(addonDirInput)
+	else:
+		# If executed from a subdirectory, walk upwards to find the add-on root.
+		cwd = Path(os.getcwd()).resolve()
+		addonRoot = next((p for p in (cwd, *cwd.parents) if (p / "buildVars.py").exists()), None)
+		addonDir = str(addonRoot) if addonRoot is not None else str(cwd)
 
 	print("=== NVDA ADD-ON UPDATE TOOL ===")
 	print(f"[*] Target Directory: {addonDir}")
@@ -324,7 +332,8 @@ def main() -> None:
 
 	if not os.path.exists(oldBuildvars):
 		print(f"[-] Error: '{addonDir}' does not appear to be a valid NVDA Add-on (missing buildVars.py).")
-		input("\nPress Enter to exit...")
+		if sys.stdin.isatty():
+			input("\nPress Enter to exit...")
 		sys.exit(1)
 
 	print("[*] Phase 1: Analyzing existing project structure and metadata...")
@@ -347,7 +356,8 @@ def main() -> None:
 			print("[+] Backup created successfully.")
 		except Exception as e:
 			print(f"[-] Critical: Backup failed ({e}). Aborting update.")
-			input("\nPress Enter to exit...")
+			if sys.stdin.isatty():
+				input("\nPress Enter to exit...")
 			sys.exit(1)
 	else:
 		print("[*] Phase 2: Safety backup skipped.")
@@ -376,7 +386,8 @@ def main() -> None:
 			print("[-] Error: Failed to execute git clone. Make sure Git is available in your PATH.")
 			if isinstance(e, subprocess.CalledProcessError) and e.stderr:
 				print(f"Details: {e.stderr.decode('utf-8', errors='ignore')}")
-			input("\nPress Enter to exit...")
+			if sys.stdin.isatty():
+				input("\nPress Enter to exit...")
 			sys.exit(1)
 
 		print("[*] Synchronizing template machinery files...")
@@ -389,7 +400,7 @@ def main() -> None:
 			".venv",
 			"docs",
 			".ruff_cache",
-			"updateaddon.py",
+			"updateaddonfromtemplate.py",
 		}
 		syncReport = []
 
@@ -461,3 +472,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+    
