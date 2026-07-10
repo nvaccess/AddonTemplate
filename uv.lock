@@ -5,7 +5,13 @@ requires-python = "==3.13.*"
 [[package]]
 name = "addontemplate"
 source = { editable = "." }
-dependencies = [
+
+[package.dev-dependencies]
+build = [
+    { name = "markdown" },
+    { name = "scons" },
+]
+dev = [
     { name = "crowdin-api-client" },
     { name = "lxml" },
     { name = "markdown" },
@@ -19,9 +25,29 @@ dependencies = [
     { name = "scons" },
     { name = "uv" },
 ]
+l10n = [
+    { name = "crowdin-api-client" },
+    { name = "lxml" },
+    { name = "markdown-link-attr-modifier" },
+    { name = "mdx-gh-links" },
+    { name = "mdx-truly-sane-lists" },
+    { name = "nh3" },
+]
+lint = [
+    { name = "prek" },
+    { name = "pyright", extra = ["nodejs"] },
+    { name = "ruff" },
+    { name = "uv" },
+]
 
 [package.metadata]
-requires-dist = [
+
+[package.metadata.requires-dev]
+build = [
+    { name = "markdown", specifier = "==3.10" },
+    { name = "scons", specifier = "==4.10.1" },
+]
+dev = [
     { name = "crowdin-api-client", specifier = "==1.24.1" },
     { name = "lxml", specifier = "==6.1.0" },
     { name = "markdown", specifier = "==3.10" },
@@ -33,6 +59,20 @@ requires-dist = [
     { name = "pyright", extras = ["nodejs"], specifier = "==1.1.407" },
     { name = "ruff", specifier = "==0.14.5" },
     { name = "scons", specifier = "==4.10.1" },
+    { name = "uv", specifier = "==0.11.15" },
+]
+l10n = [
+    { name = "crowdin-api-client", specifier = "==1.24.1" },
+    { name = "lxml", specifier = "==6.1.0" },
+    { name = "markdown-link-attr-modifier", specifier = "==0.2.1" },
+    { name = "mdx-gh-links", specifier = "==0.4" },
+    { name = "mdx-truly-sane-lists", specifier = "==1.3" },
+    { name = "nh3", specifier = "==0.3.2" },
+]
+lint = [
+    { name = "prek", specifier = "==0.4.8" },
+    { name = "pyright", extras = ["nodejs"], specifier = "==1.1.407" },
+    { name = "ruff", specifier = "==0.14.5" },
     { name = "uv", specifier = "==0.11.15" },
 ]
 
