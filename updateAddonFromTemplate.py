@@ -110,11 +110,12 @@ def extractBuildvarsMetadata(filePath: str | Path) -> tuple[dict[str, Any], dict
 	return metadata, globalVars
 
 
-def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, dryRun: bool = False) -> str:
+def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict[str, Any], dryRun: bool = False) -> str:
 	"""Merge template pyproject.toml configuration into the developer's file.
 
 	:param projPath: Path to the existing pyproject.toml file.
 	:param tplPath: Path to the template pyproject.toml file.
+	:param metadata: Dictionary containing legacy metadata values from buildVars.py.
 	:param dryRun: If True, simulate the merge without writing changes to disk.
 	:return: A string indicating the result of the merge operation.
 	"""
@@ -125,9 +126,43 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, dryRun: bool =
 		return "skipped (no template)"
 
 	if not pProj.exists():
-		if not dryRun:
-			shutil.copy2(pTpl, pProj)
-		return "created from template"
+		try:
+			with pTpl.open("r", encoding="utf-8") as f:
+				projData = tomlkit.parse(f.read())
+			
+			if "project" in projData:
+				if "addon_name" in metadata and metadata["addon_name"]:
+					projData["project"]["name"] = metadata["addon_name"]
+				
+				if "addon_summary" in metadata and metadata["addon_summary"]:
+					projData["project"]["description"] = metadata["addon_summary"]
+				
+				if "addon_author" in metadata and metadata["addon_author"]:
+					import re
+					authors_list = tomlkit.array()
+					authors_list.multiline(True)
+					
+					parts = [p.strip() for p in metadata["addon_author"].split(",")]
+					for part in parts:
+						m = re.match(r"^(.*?)\s*<(.*?)>$", part)
+						if m:
+							t = tomlkit.inline_table()
+							t.update({"name": m.group(1).strip(), "email": m.group(2).strip()})
+							authors_list.append(t)
+						elif part:
+							t = tomlkit.inline_table()
+							t.update({"name": part, "email": ""})
+							authors_list.append(t)
+					
+					if len(authors_list) > 0:
+						projData["project"]["maintainers"] = authors_list
+
+			if not dryRun:
+				with pProj.open("w", encoding="utf-8") as f:
+					f.write(tomlkit.dumps(projData))
+			return "created from template"
+		except Exception as e:
+			return f"failed to create from template ({str(e)})"
 
 	try:
 		with pProj.open("r", encoding="utf-8") as f:
@@ -449,7 +484,7 @@ def main() -> None:
 		templatePyproject = os.path.join(tempDir, "pyproject.toml")
 
 		bvStatus = mergeBuildvarsFile(oldBuildvars, templateBuildvars, bvMeta, bvGlobals, args.dryRun)
-		ppStatus = mergePyprojectToml(oldPyproject, templatePyproject, args.dryRun)
+		ppStatus = mergePyprojectToml(oldPyproject, templatePyproject, bvMeta, args.dryRun)
 
 		print("\n" + "=" * 50)
 		print("UPDATE REPORT")
@@ -472,3 +507,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+    
