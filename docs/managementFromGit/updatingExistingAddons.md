@@ -14,26 +14,20 @@
 
 3. In the folder where your add-on repository is cloned, create an ```addon``` subfolder and store the code for your add-on.
 
-4. Go to the repository root:
-
-   ```sh
-   cd {repoFolder}/{repoName}
-   ```
-
-5. Commit your changes:
+4. Commit your changes:
 
    ```sh
    git add .
    git commit -m "Initial commit"
    ```
 
-6. Add AddonTemplate as a remote:
+5. Add AddonTemplate as a remote:
 
    ```sh
    git remote add template https://github.com/nvaccess/AddonTemplate.git
    ```
 
-7. Fetch the template:
+6. Fetch the template:
 
    ```sh
    git fetch template
@@ -54,11 +48,11 @@ If you prefer to manage the update process yourself, a fully manual Git-based wo
 
 ## Recommended Method: Automated Update Using the Companion Tool
 
-To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion update script is included within the template workspace: ```updateAddonFromTemplate.py```.
+To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion update script is included in AddonTemplate: ```updateAddonFromTemplate.py```.
 
-The script automatically handles the update process while intelligently supporting two types of legacy add-ons:
+The script automatically supports updating two types of legacy add-ons:
 
-- **Legacy Structure (Dictionary-based without pyproject.toml):** For older add-ons where `addon_info` was defined as a standard dictionary, the tool automatically migrates the metadata to the modern `AddonInfo` object structure, generates a brand new, fully populated `pyproject.toml` file matching the latest template standards, and synchronizes all infrastructure files.
+- **Legacy Structure (Dictionary-based without pyproject.toml):** For older add-ons where `addon_info` was defined as a standard dictionary, the tool automatically migrates the metadata to the modern `AddonInfo` object structure, generates a new, fully populated `pyproject.toml` file matching the latest template standards, and synchronizes all infrastructure files.
 - **Modern Structure (AddonInfo-based):** For newer add-ons that already use the `AddonInfo` object but need upstream template updates, the tool checks for any missing metadata keys in `buildVars.py` to insert them, and safely updates `pyproject.toml` dependencies and versions while preserving your custom configuration rules for tools like `pyright` and `ruff`.
 
 ### Prerequisites
@@ -86,12 +80,6 @@ Before updating your repository:
 - Commit or stash any pending changes.
 - It is recommended to perform the update on a dedicated branch.
 
-Fetch the latest version of AddonTemplate:
-
-```sh
-git fetch template
-```
-
 Run the update script in **Standard Mode**:
 
 ```sh
@@ -105,7 +93,7 @@ uv run updateAddonFromTemplate.py ../MyAddon
 ```
 
 > [!NOTE]
-> Before applying any modifications, the script creates an untracked backup directory located next to the add-on folder named `$<addon>_bak_<timestamp>```. This directory contains a full copy of the entire project before the update, allowing you to restore the previous state manually if necessary.
+> Before applying any modifications, the script creates an untracked backup directory located next to the add-on folder named `<addon>_bak_<timestamp>`. This directory contains a copy of the entire project before the update, allowing you to restore the previous state manually if necessary.
 
 Once the update has completed, verify that the add-on still builds correctly:
 
@@ -324,7 +312,7 @@ If you are unsure whether a change comes from your add-on or from AddonTemplate,
 
 #### Automated update
 
-Since the automated script creates an untracked timestamped full copy backup directory named `$<addon>_bak_<timestamp>``` before modifying any infrastructure files, you can restore your previous state manually from that folder if you decide not to keep the update.
+Since the automated script creates an untracked timestamped full copy backup directory named `<addon>_bak_<timestamp>` before modifying any infrastructure files, you can restore your previous state manually from that folder if you decide not to keep the update.
 
 If you have already staged some changes, you can also discard them using:
 
