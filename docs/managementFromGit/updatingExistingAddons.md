@@ -1,128 +1,133 @@
-# Integrating the add-on template in your add-on[cite: 5]
+# Integrating the add-on template in your add-on
 
-## Pre-requisites for initial setup[cite: 5]
+## Pre-requisites for initial setup
 
-1. Create a repository, for example on GitHub, providing README and LICENSE files.[cite: 5]
+1. Create a repository, for example on GitHub, providing README and LICENSE files.
 
-2. Clone the repository:[cite: 5]
+2. Clone the repository:
 
    ```sh
    cd {repoFolder}
    git clone https://github.com/{repoName}.git
+   cd {repoName}
    ```
 
-3. In the folder where your add-on repository is cloned, create an ```addon``` subfolder and store the code for your add-on.[cite: 5]
+3. In the folder where your add-on repository is cloned, create an ```addon``` subfolder and store the code for your add-on.
 
-4. Go to the repository root:[cite: 5]
+4. Go to the repository root:
 
    ```sh
-   cd {repoFolder}
+   cd {repoFolder}/{repoName}
    ```
 
-5. Commit your changes:[cite: 5]
+5. Commit your changes:
 
    ```sh
    git add .
    git commit -m "Initial commit"
    ```
 
-6. Add AddonTemplate as a remote:[cite: 5]
+6. Add AddonTemplate as a remote:
 
    ```sh
    git remote add template https://github.com/nvaccess/AddonTemplate.git
    ```
 
-7. Fetch the template:[cite: 5]
+7. Fetch the template:
 
    ```sh
    git fetch template
    ```
 
-## Updating an Existing Add-on[cite: 5]
+## Updating an Existing Add-on
 
-AddonTemplate evolves over time and regularly receives improvements, bug fixes, new GitHub workflows, and build system updates.[cite: 5]
+AddonTemplate evolves over time and regularly receives improvements, bug fixes, new GitHub workflows, and build system updates.
 
-The recommended way to keep your add-on synchronized with the latest version of AddonTemplate is to use the companion update script included with the template.[cite: 5]
+The recommended way to keep your add-on synchronized with the latest version of AddonTemplate is to use the companion update script included with the template.
 
-If you prefer to manage the update process yourself, a fully manual Git-based workflow is also available later in this document.[cite: 5]
+If you prefer to manage the update process yourself, a fully manual Git-based workflow is also available later in this document.
 
 > [!NOTE]
-> Updating from AddonTemplate only affects your project's infrastructure (build scripts, GitHub workflows, configuration files, etc.). It does **not** modify your add-on's source code.[cite: 5]
+> Updating from AddonTemplate only affects your project's infrastructure (build scripts, GitHub workflows, configuration files, etc.). It does **not** modify your add-on's source code.
 
 ---
 
-## Recommended Method: Automated Update Using the Companion Tool[cite: 5]
+## Recommended Method: Automated Update Using the Companion Tool
 
-To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion update script is included within the template workspace: ```updateAddonFromTemplate.py```.[cite: 5]
+To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion update script is included within the template workspace: ```updateAddonFromTemplate.py```.
 
-The script automatically handles the update process while preserving the information specific to your add-on.[cite: 5]
+The script automatically handles the update process while intelligently supporting two types of legacy add-ons:
 
-Among other things, it:[cite: 5]
+- **Legacy Structure (Dictionary-based without pyproject.toml):** For older add-ons where `addon_info` was defined as a standard dictionary, the tool automatically migrates the metadata to the modern `AddonInfo` object structure, generates a brand new, fully populated `pyproject.toml` file matching the latest template standards, and synchronizes all infrastructure files.
+- **Modern Structure (AddonInfo-based):** For newer add-ons that already use the `AddonInfo` object but need upstream template updates, the tool checks for any missing metadata keys in `buildVars.py` to insert them, and safely updates `pyproject.toml` dependencies and versions while preserving your custom configuration rules for tools like `pyright` and `ruff`.
 
-- updates infrastructure files from the latest version of AddonTemplate;[cite: 5]
-- preserves your add-on metadata;[cite: 5]
-- merges ```buildVars.py``` and ```pyproject.toml```;[cite: 5]
-- removes placeholder metadata (such as ```nvaccess``` from the authors list when updating a third-party add-on);[cite: 5]
-- creates a backup of the original infrastructure files before applying any modifications.[cite: 5]
+### Prerequisites
 
-### Prerequisites[cite: 5]
+Before running the tool, ensure your system meets the following requirements:
 
-Before running the tool, ensure your system meets the following requirements:[cite: 5]
+- **Python**: Version **3.13** or newer must be installed (matching the template's required Python version).
+- **Git**: Git must be installed and available in your system ```PATH```.
 
-- **Python**: Version **3.11** or newer must be installed.[cite: 5]
-- **Git**: Git must be installed and available in your system ```PATH```.[cite: 5]
+### Running the automated tool
 
-### Running the automated tool[cite: 5]
+The script is highly flexible and supports two execution modes:
 
-The script is designed to be flexible and can be executed either from the root of your repository or from any other working directory.[cite: 5]
+1. **Standard Mode (No arguments):** Run the script directly from the root of your repository or from any of its subdirectories. It will automatically locate the project root by searching for `buildVars.py`.
+2. **Target Directory Mode (With argument):** Run the script from any working directory by supplying the optional `addonDir` path (relative or absolute) pointing to the add-on repository you wish to update.
 
-Before updating your repository:[cite: 5]
+Before updating your repository:
 
-- Ensure your working tree is clean.[cite: 5]
+- Ensure your working tree is clean.
 
   ```sh
   git status
   ```
 
-- Commit or stash any pending changes.[cite: 5]
-- It is recommended to perform the update on a dedicated branch.[cite: 5]
+- Commit or stash any pending changes.
+- It is recommended to perform the update on a dedicated branch.
 
-Fetch the latest version of AddonTemplate:[cite: 5]
+Fetch the latest version of AddonTemplate:
 
 ```sh
 git fetch template
 ```
 
-Run the update script:[cite: 5]
+Run the update script in **Standard Mode**:
 
 ```sh
 uv run updateAddonFromTemplate.py
 ```
 
-> [!NOTE]
-> Before modifying any infrastructure files, the script creates an untracked ```_bak_``` directory containing backups of every file it updates. If necessary, you can restore these files manually.[cite: 5]
+Alternatively, run the script in **Target Directory Mode** by specifying the path to your add-on folder:
 
-Once the update has completed, verify that the add-on still builds correctly:[cite: 5]
+```sh
+uv run updateAddonFromTemplate.py ../MyAddon
+```
+
+> [!NOTE]
+> Before applying any modifications, the script creates an untracked backup directory located next to the add-on folder named `$<addon>_bak_<timestamp>```. This directory contains a full copy of the entire project before the update, allowing you to restore the previous state manually if necessary.
+
+Once the update has completed, verify that the add-on still builds correctly:
 
 ```sh
 uv sync
 uv run scons
 ```
 
-If everything builds successfully, stage and commit the updated infrastructure:[cite: 5]
+If everything builds successfully, stage and commit the updated infrastructure:
 
 ```sh
 git add .
 git commit -m "chore: sync infrastructure with AddonTemplate"
 ```
 
-### Excluding specific template files[cite: 5]
+### Excluding specific template files or directories
 
-By default, the script synchronizes every infrastructure file provided by AddonTemplate.[cite: 5]
+By default, the script synchronizes every infrastructure file provided by AddonTemplate.
 
-If you want to preserve specific files from your repository (for example, a customized GitHub workflow), you can exclude them from synchronization.[cite: 5]
+If you want to preserve specific components from your repository (for example, a customized GitHub workflow or directory), you can exclude them from synchronization.
 
-Open ```updateAddonFromTemplate.py``` and locate the ```IGNORED_FILES``` set near the beginning of the ```main()``` function:[cite: 5]
+Open ```updateAddonFromTemplate.py``` and locate the ```IGNORED_FILES``` set near the beginning of the ```main()``` function:
 
 ```python
 IGNORED_FILES = {
@@ -130,168 +135,169 @@ IGNORED_FILES = {
 }
 ```
 
-Add any relative path from the template root to this set to prevent that file from being synchronized.[cite: 5]
+Add any template-relative path to this set to prevent the corresponding file or directory from being synchronized.
 
 ---
 
-## Alternative Method: Manual Update Using Git Merge[cite: 5]
+## Alternative Method: Manual Update Using Git Merge
 
-If you prefer not to use the automated tool, you can manually merge the latest version of AddonTemplate into your repository.[cite: 5]
+If you prefer not to use the automated tool, you can manually merge the latest version of AddonTemplate into your repository.
 
-### Before you begin[cite: 5]
+### Before you begin
 
-Before updating your repository:[cite: 5]
+Before updating your repository:
 
-- Ensure your working tree is clean.[cite: 5]
+- Ensure your working tree is clean.
 
   ```sh
   git status
   ```
 
-- Commit or stash any pending changes.[cite: 5]
+- Commit or stash any pending changes.
 
-- It is recommended to perform the update on a dedicated branch.[cite: 5]
+- It is recommended to perform the update on a dedicated branch.
 
-If anything goes wrong before the merge commit is created, and you haven't used the ```--squash``` option, you can safely cancel the operation using:[cite: 5]
+If anything goes wrong before the merge commit is created, and you haven't used the ```--squash``` option, you can safely cancel the operation using:
 
 ```sh
 git merge --abort
 ```
 
-### Adding the template repository[cite: 5]
+### Adding the template repository
 
-If you have not already done so, add AddonTemplate as a remote:[cite: 5]
+If you have not already done so, add AddonTemplate as a remote:
 
 ```sh
 git remote add template https://github.com/nvaccess/AddonTemplate.git
 ```
 
-Then fetch the latest changes:[cite: 5]
+Then fetch the latest changes:
 
 ```sh
 git fetch template
 ```
 
-### Merging the latest template[cite: 5]
+### Merging the latest template
 
-Merge the latest version of AddonTemplate:[cite: 5]
+Merge the latest version of AddonTemplate:
 
 ```sh
 git merge template/master --allow-unrelated-histories --squash
 ```
 
-The ```--allow-unrelated-histories``` option is required because your add-on repository and AddonTemplate do not share a common Git history.[cite: 5]
+The ```--allow-unrelated-histories``` option is required because your add-on repository and AddonTemplate do not share a common Git history.
 
-The ```--squash``` option stages all changes from the template as a single uncommitted change, helping keep your repository history cleaner.[cite: 5]
+The ```--squash``` option stages all changes from the template as a single uncommitted change, helping keep your repository history cleaner.
 
-At this stage, Git may report merge conflicts.[cite: 5]
+At this stage, Git may report merge conflicts.
 
-This is completely normal.[cite: 5]
+This is completely normal.
 
-## Understanding merge conflicts[cite: 5]
+## Understanding merge conflicts
 
-During the merge, Git attempts to combine the contents of both repositories automatically.[cite: 5]
+During the merge, Git attempts to combine the contents of both repositories automatically.
 
-When Git cannot determine which version should be kept, it reports a merge conflict.[cite: 5]
+When Git cannot determine which version should be kept, it reports a merge conflict.
 
-A conflict does **not** mean that something went wrong.[cite: 5]
+A conflict does **not** mean that something went wrong.
 
-It simply means that some files require manual review.[cite: 5]
-### Resolving the merge[cite: 5]
+It simply means that some files require manual review.
 
-### Using the restore command[cite: 5]
+### Resolving the merge
 
-The ```restore``` command can be used to update files in your working directory, i.e. the folder where your add-on repository was cloned.[cite: 5]
+### Using the restore command
 
-The ```--source``` option specifies where the files should be restored from.[cite: 5]
+The ```restore``` command can be used to update files in your working directory, i.e. the folder where your add-on repository was cloned.
 
-### Keep your add-on documentation[cite: 5]
+The ```--source``` option specifies where the files should be restored from.
 
-Your add-on documentation should not be replaced by the template.[cite: 5]
+### Keep your add-on documentation
 
-To restore the Markdown files from your repository and prevent them from being overwritten by the template, run:[cite: 5]
+Your add-on documentation should not be replaced by the template.
+
+To restore the Markdown files from your repository and prevent them from being overwritten by the template, run:
 
 ```sh
 git restore *.md --source=HEAD
 ```
 
-### Remove the template documentation[cite: 5]
+### Remove the template documentation
 
-The ```docs/``` directory belongs to AddonTemplate itself.[cite: 5]
+The ```docs/``` directory belongs to AddonTemplate itself.
 
-It is intended for developing AddonTemplate and should not become part of your add-on repository.[cite: 5]
+It is intended for developing AddonTemplate and should not become part of your add-on repository.
 
-Remove it:[cite: 5]
+Remove it:
 
 ```sh
 git rm -r docs
 ```
 
-Alternatively, if the directory already exists in your repository, you can restore your own version:[cite: 5]
+Alternatively, if the directory already exists in your repository, you can restore your own version:
 
 ```sh
 git restore docs --source=HEAD
 ```
 
-### Resolve ```buildVars.py```[cite: 5]
+### Resolve ```buildVars.py```
 
-```buildVars.py``` usually contains merge conflicts because it includes both:[cite: 5]
+```buildVars.py``` usually contains merge conflicts because it includes both:
 
-- information specific to your add-on;[cite: 5]
-- variables introduced by newer versions of AddonTemplate.[cite: 5]
+- information specific to your add-on;
+- variables introduced by newer versions of AddonTemplate.
 
-Review the file carefully.[cite: 5]
+Review the file carefully.
 
-In general:[cite: 5]
+In general:
 
-- keep your add-on metadata;[cite: 5]
-- preserve your version number;[cite: 5]
-- keep your custom settings;[cite: 5]
-- add any new variables introduced by the updated template.[cite: 5]
+- keep your add-on metadata;
+- preserve your version number;
+- keep your custom settings;
+- add any new variables introduced by the updated template.
 
-### Resolve ```pyproject.toml```[cite: 5]
+### Resolve ```pyproject.toml```
 
-```pyproject.toml``` is another file that commonly requires manual review.[cite: 5]
+```pyproject.toml``` is another file that commonly requires manual review.
 
-Keep your project-specific configuration while incorporating any new settings required by the updated template.[cite: 5]
+Keep your project-specific configuration while incorporating any new settings required by the updated template.
 
-### Other files[cite: 5]
+### Other files
 
-For most remaining infrastructure files, the version provided by AddonTemplate is generally the correct one.[cite: 5]
+For most remaining infrastructure files, the version provided by AddonTemplate is generally the correct one.
 
-Typical examples include:[cite: 5]
+Typical examples include:
 
-- ```.github/```[cite: 5]
-- ```.gitignore```[cite: 5]
-- ```manifest.ini.tpl```[cite: 5]
-- ```manifest-translated.ini.tpl```[cite: 5]
-- ```site_scons/```[cite: 5]
-- ```sconstruct```[cite: 5]
+- ```.github/```
+- ```.gitignore```
+- ```manifest.ini.tpl```
+- ```manifest-translated.ini.tpl```
+- ```site_scons/```
+- ```sconstruct```
 
-Review any conflicts if necessary before completing the merge.[cite: 5]
+Review any conflicts if necessary before completing the merge.
 
-## Completing the merge[cite: 5]
+## Completing the merge
 
-Once all conflicts have been resolved, verify that the add-on still builds correctly:[cite: 5]
+Once all conflicts have been resolved, verify that the add-on still builds correctly:
 
 ```sh
 uv sync
 uv run scons
 ```
 
-If everything builds successfully, stage the modified files:[cite: 5]
+If everything builds successfully, stage the modified files:
 
 ```sh
 git add .
 ```
 
-Then create the commit:[cite: 5]
+Then create the commit:
 
 ```sh
 git commit -m "chore: sync infrastructure with AddonTemplate"
 ```
 
-## Summary[cite: 5]
+## Summary
 
 | File or directory | Recommended action |
 |-------------------|--------------------|
@@ -302,47 +308,47 @@ git commit -m "chore: sync infrastructure with AddonTemplate"
 | `pyproject.toml` | Merge manually |
 | Other template files | Usually accept the template version |
 
-## Troubleshooting[cite: 5]
+## Troubleshooting
 
-### I don't understand a merge conflict[cite: 5]
+### I don't understand a merge conflict
 
-Merge conflicts are expected when updating from a newer version of AddonTemplate.[cite: 5]
+Merge conflicts are expected when updating from a newer version of AddonTemplate.
 
-Most conflicts occur in ```buildVars.py``` and ```pyproject.toml```.[cite: 5]
+Most conflicts occur in ```buildVars.py``` and ```pyproject.toml```.
 
-Review the conflicting sections carefully and combine the changes from both versions.[cite: 5]
+Review the conflicting sections carefully and combine the changes from both versions.
 
-If you are unsure whether a change comes from your add-on or from AddonTemplate, compare the conflicting section with the latest version of AddonTemplate before resolving it.[cite: 5]
+If you are unsure whether a change comes from your add-on or from AddonTemplate, compare the conflicting section with the latest version of AddonTemplate before resolving it.
 
-### I want to cancel the update[cite: 5]
+### I want to cancel the update
 
-#### Automated update[cite: 5]
+#### Automated update
 
-Since ```updateAddonFromTemplate.py``` creates an untracked ```_bak_``` directory before modifying any infrastructure files, you can restore the previous versions manually if you decide not to keep the update.[cite: 5]
+Since the automated script creates an untracked timestamped full copy backup directory named `$<addon>_bak_<timestamp>``` before modifying any infrastructure files, you can restore your previous state manually from that folder if you decide not to keep the update.
 
-If you have already staged some changes, you can also discard them using:[cite: 5]
+If you have already staged some changes, you can also discard them using:
 
 ```sh
 git restore . --staged
 ```
 
-Then restore your working tree:[cite: 5]
+Then restore your working tree:
 
 ```sh
 git restore . --source=HEAD
 ```
 
-#### Manual update[cite: 5]
+#### Manual update
 
-If you have not yet committed the merge and **did not** use the ```--squash``` option, you can cancel it with:[cite: 5]
+If you have not yet committed the merge and **did not** use the ```--squash``` option, you can cancel it with:
 
 ```sh
 git merge --abort
 ```
 
-If you performed a squash merge, ```git merge --abort``` is no longer available because no merge state is recorded.[cite: 5]
+If you performed a squash merge, ```git merge --abort``` is no longer available because no merge state is recorded.
 
-In this case, restore your repository with:[cite: 5]
+In this case, restore your repository with:
 
 ```sh
 git restore . --staged
@@ -352,7 +358,7 @@ git restore . --staged
 git restore . --source=HEAD
 ```
 
-If you have already committed the update and want to return to the previous state, you can reset your branch:[cite: 5]
+If you have already committed the update and want to return to the previous state, you can reset your branch:
 
 ```sh
 git reset --hard {cleanBranch}
