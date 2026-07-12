@@ -129,37 +129,45 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 		try:
 			with pTpl.open("r", encoding="utf-8") as f:
 				projData = tomlkit.parse(f.read())
-
-			if "project" in projData:
-				if "addon_name" in metadata and metadata["addon_name"]:
-					projData["project"]["name"] = metadata["addon_name"]
-
-				if "addon_summary" in metadata and metadata["addon_summary"]:
-					projData["project"]["description"] = metadata["addon_summary"]
-
-				if "addon_author" in metadata and metadata["addon_author"]:
-					import re
-					authors_list = tomlkit.array()
-					authors_list.multiline(True)
-
-					parts = [p.strip() for p in metadata["addon_author"].split(",")]
-					for part in parts:
-						m = re.match(r"^(.*?)\s*<(.*?)>$", part)
-						if m:
-							t = tomlkit.inline_table()
-							t.update({"name": m.group(1).strip(), "email": m.group(2).strip()})
-							authors_list.append(t)
-						elif part:
-							t = tomlkit.inline_table()
-							t.update({"name": part, "email": ""})
-							authors_list.append(t)
-
-					if len(authors_list) > 0:
-						projData["project"]["maintainers"] = authors_list
+			
+			if "project" not in projData:
+				projData["project"] = tomlkit.table()
+			
+			if "addon_name" in metadata and metadata["addon_name"]:
+				projData["project"]["name"] = metadata["addon_name"]
+			
+			if "addon_summary" in metadata and metadata["addon_summary"]:
+				projData["project"]["description"] = metadata["addon_summary"]
+			
+			# Build the maintainers multiline array using standard inline tables
+			authors_list = tomlkit.array()
+			authors_list.multiline(True)
+			
+			if "addon_author" in metadata and metadata["addon_author"]:
+				import re
+				raw_authors = str(metadata["addon_author"])
+				parts = [p.strip() for p in raw_authors.split(",") if p.strip()]
+				
+				for part in parts:
+					m = re.match(r"^(.*?)\s*<(.*?)>$", part)
+					if m:
+						t = tomlkit.inline_table()
+						t.update({"name": m.group(1).strip(), "email": m.group(2).strip()})
+						authors_list.append(t)
+					elif part:
+						t = tomlkit.inline_table()
+						t.update({"name": part, "email": ""})
+						authors_list.append(t)
+			
+			projData["project"]["maintainers"] = authors_list
 
 			if not dryRun:
+				# Dump to string and sanitize indentation to strict tabs before writing
+				toml_output = tomlkit.dumps(projData)
+				toml_output = toml_output.replace("    ", "\t")
+				
 				with pProj.open("w", encoding="utf-8") as f:
-					f.write(tomlkit.dumps(projData))
+					f.write(toml_output)
 			return "created from template"
 		except Exception as e:
 			return f"failed to create from template ({str(e)})"
@@ -507,3 +515,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+    
