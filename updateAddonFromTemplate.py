@@ -129,19 +129,19 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 		try:
 			with pTpl.open("r", encoding="utf-8") as f:
 				projData = tomlkit.parse(f.read())
-
+			
 			if "project" in projData:
 				if "addon_name" in metadata and metadata["addon_name"]:
 					projData["project"]["name"] = metadata["addon_name"]
-
+				
 				if "addon_summary" in metadata and metadata["addon_summary"]:
 					projData["project"]["description"] = metadata["addon_summary"]
-
+				
 				if "addon_author" in metadata and metadata["addon_author"]:
 					import re
 					authors_list = tomlkit.array()
 					authors_list.multiline(True)
-
+					
 					parts = [p.strip() for p in metadata["addon_author"].split(",")]
 					for part in parts:
 						m = re.match(r"^(.*?)\s*<(.*?)>$", part)
@@ -153,7 +153,7 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 							t = tomlkit.inline_table()
 							t.update({"name": part, "email": ""})
 							authors_list.append(t)
-
+					
 					if len(authors_list) > 0:
 						projData["project"]["maintainers"] = authors_list
 
@@ -402,7 +402,7 @@ def main() -> None:
 	# List of template-relative paths to ignore during synchronization (requested by @CyrilleB79)
 	# Lowercase paths are used to prevent case mismatch issues across OS environments
 	IGNORED_FILES = {
-		os.path.join(".github", "workflows", "build_addon.yml").lower(),
+		#os.path.join(".github", "workflows", "build_addon.yml").lower(),
 	}
 
 	with tempfile.TemporaryDirectory() as tempDir:
@@ -507,3 +507,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+    
