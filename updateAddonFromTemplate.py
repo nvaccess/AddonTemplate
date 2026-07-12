@@ -25,6 +25,10 @@ def deepMergeDicts(dictProj: dict[str, Any], dictTpl: dict[str, Any]) -> dict[st
 
 	Note: tomlkit returns custom table/array objects that behave like mappings/sequences but are not
 	instances of built-in `dict`/`list`, so we must detect by ABCs rather than concrete types.
+
+	:param dictProj: The original dictionary to be updated.
+	:param dictTpl: The template dictionary whose values will be merged into dictProj.
+	:return: The updated dictProj with merged values from dictTpl.
 	"""
 	from collections.abc import MutableMapping, MutableSequence
 
@@ -254,12 +258,12 @@ def mergeBuildvarsFile(
 ) -> str:
 	"""Merge template buildVars.py using precise AST range tracking to prevent multiline leaks.
 
-		:param projPath: Path to the existing buildVars.py file.
-		:param tplPath: Path to the template buildVars.py file.
-		:param metadata: Dictionary containing metadata values to update.
-		:param globalVars: Dictionary containing global variable values to update.
-		:param dryRun: If True, simulate the merge without writing changes to disk.
-	:Return: A string indicating the result of the merge operation.
+	:param projPath: Path to the existing buildVars.py file.
+	:param tplPath: Path to the template buildVars.py file.
+	:param metadata: Dictionary containing metadata values to update.
+	:param globalVars: Dictionary containing global variable values to update.
+	:param dryRun: If True, simulate the merge without writing changes to disk.
+	:return: A string indicating the result of the merge operation.
 	"""
 	pTpl = Path(tplPath)
 	pProj = Path(projPath)
@@ -515,3 +519,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+    
