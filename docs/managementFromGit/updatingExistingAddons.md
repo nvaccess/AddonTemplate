@@ -59,8 +59,16 @@ The script automatically supports updating two types of legacy add-ons:
 
 Before running the tool, ensure your system meets the following requirements:
 
-- **Python**: Version **3.13** or newer must be installed (matching the template's required Python version).
-- **Git**: Git must be installed and available in your system ```PATH```.
+- **Python**: Version **3.13** or newer must be installed (matching the template's required Python version)[cite: 1].
+- **Git**: Git must be installed and available in your system ```PATH```[cite: 1].
+- **Dependency Management (tomlkit)**: Because the automated script relies on the third-party `tomlkit` library to safely parse and merge configurations, it must be installed in your global Python environment before execution. This is necessary because legacy add-on repositories do not include this dependency yet, and it is not yet present by default in the template's stable `master` branch.
+
+  To install or update `tomlkit` globally, run the following command in your terminal:
+  
+  ```sh
+  python -m pip install -U tomlkit
+  ```
+  *(Note: Windows users using the standard Python launcher can replace `python` with `py` if needed: `py -m pip install -U tomlkit`)*
 
 ### Running the automated tool
 
