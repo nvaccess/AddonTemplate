@@ -64,7 +64,7 @@ Before running the tool, ensure your system meets the following requirements:
 - **Dependency Management (tomlkit)**: Because the automated script relies on the third-party `tomlkit` library to safely parse and merge configurations, it must be installed in your global Python environment before execution. This is necessary because legacy add-on repositories do not include this dependency yet, and it is not yet present by default in the template's stable `master` branch.
 
   To install or update `tomlkit` globally, run the following command in your terminal:
-  
+
   ```sh
   python -m pip install -U tomlkit
   ```
