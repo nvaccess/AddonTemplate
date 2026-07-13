@@ -358,19 +358,6 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> None:
 	}
 	syncReport = []
 
-	# List of template-relative paths to ignore during synchronization (requested by @CyrilleB79)
-	IGNORED_FILES = set()
-
-	# Custom ignore handler for shutil.copytree to filter subdirectories and files
-	def tree_ignore_handler(path: str, names: list[str]) -> list[str]:
-		ignored = []
-		for name in names:
-			full_sub_path = os.path.join(path, name)
-			rel_sub_path = os.path.relpath(full_sub_path, start=tempDir).lower()
-			if rel_sub_path in IGNORED_FILES:
-				ignored.append(name)
-		return ignored
-
 	for item in os.listdir(tempDir):
 		if item.lower() in protectedElements:
 			syncReport.append(f"{item} .................... skipped (protected scope)")
@@ -382,17 +369,11 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> None:
 		srcItem = os.path.join(tempDir, item)
 		dstItem = os.path.join(addonDir, item)
 
-		# Check if the root item itself is explicitly ignored
-		relItemPath = os.path.relpath(srcItem, start=tempDir).lower()
-		if relItemPath in IGNORED_FILES:
-			syncReport.append(f"{item} .................... skipped (user ignored)")
-			continue
-
 		try:
 			if os.path.isdir(srcItem):
 				if not dryRun:
 					os.makedirs(dstItem, exist_ok=True)
-					shutil.copytree(srcItem, dstItem, ignore=tree_ignore_handler, dirs_exist_ok=True)
+					shutil.copytree(srcItem, dstItem, dirs_exist_ok=True)
 				syncReport.append(f"{item}/ ................... merged safely")
 			else:
 				if not dryRun:
