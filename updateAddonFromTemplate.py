@@ -292,7 +292,7 @@ def mergeBuildvarsFile(
 						formattedVal = "None"
 					elif isinstance(val, str):
 						is_translatable = key in ["addon_summary", "addon_description", "addon_changelog"]
-						formattedVal = f"_({val!r})" if is_translatable else repr(val)
+						formattedVal = f'_({val!r})' if is_translatable else repr(val)
 					else:
 						formattedVal = str(val)
 
@@ -337,25 +337,123 @@ def mergeBuildvarsFile(
 	return "merged & structured (AST verified)"
 
 
+def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> None:
+	"""Synchronizes template machinery files from the temporary workspace into the target directory.
+
+	:param tempDir: Path to the local temporary directory containing the template files.
+	:param addonDir: Path to the target add-on root directory.
+	:param dryRun: If True, simulate the sync without writing changes to disk.
+	"""
+	print("[*] Synchronizing template machinery files...")
+	protectedElements = {
+		"readme.md",
+		"changelog.md",
+		"addon",
+		".git",
+		"__pycache__",
+		".venv",
+		"docs",
+		".ruff_cache",
+		#"updateaddonfromtemplate.py",
+	}
+	syncReport = []
+
+	# List of template-relative paths to ignore during synchronization (requested by @CyrilleB79)
+	IGNORED_FILES = set()
+
+	# Custom ignore handler for shutil.copytree to filter subdirectories and files
+	def tree_ignore_handler(path: str, names: list[str]) -> list[str]:
+		ignored = []
+		for name in names:
+			full_sub_path = os.path.join(path, name)
+			rel_sub_path = os.path.relpath(full_sub_path, start=tempDir).lower()
+			if rel_sub_path in IGNORED_FILES:
+				ignored.append(name)
+		return ignored
+
+	for item in os.listdir(tempDir):
+		if item.lower() in protectedElements:
+			syncReport.append(f"{item} .................... skipped (protected scope)")
+			continue
+
+		if item in ["buildVars.py", "pyproject.toml"]:
+			continue
+
+		srcItem = os.path.join(tempDir, item)
+		dstItem = os.path.join(addonDir, item)
+
+		# Check if the root item itself is explicitly ignored
+		relItemPath = os.path.relpath(srcItem, start=tempDir).lower()
+		if relItemPath in IGNORED_FILES:
+			syncReport.append(f"{item} .................... skipped (user ignored)")
+			continue
+
+		try:
+			if os.path.isdir(srcItem):
+				if not dryRun:
+					os.makedirs(dstItem, exist_ok=True)
+					shutil.copytree(srcItem, dstItem, ignore=tree_ignore_handler, dirs_exist_ok=True)
+				syncReport.append(f"{item}/ ................... merged safely")
+			else:
+				if not dryRun:
+					shutil.copy2(srcItem, dstItem)
+				syncReport.append(f"{item} .................... synchronized")
+		except Exception as e:
+			syncReport.append(f"{item} .................... failed ({str(e)})")
+
+	print("[*] Phase 4: Processing structural configuration merges...")
+	templateBuildvars = os.path.join(tempDir, "buildVars.py")
+	templatePyproject = os.path.join(tempDir, "pyproject.toml")
+
+	oldBuildvars = os.path.join(addonDir, "buildVars.py")
+	oldPyproject = os.path.join(addonDir, "pyproject.toml")
+
+	bvMeta, bvGlobals = extractBuildvarsMetadata(oldBuildvars)
+	addonName = bvMeta.get("addon_name", os.path.basename(addonDir))
+
+	bvStatus = mergeBuildvarsFile(oldBuildvars, templateBuildvars, bvMeta, bvGlobals, dryRun)
+	ppStatus = mergePyprojectToml(oldPyproject, templatePyproject, bvMeta, dryRun)
+
+	print("\n" + "=" * 50)
+	print("UPDATE REPORT")
+	print("=" * 50)
+	print(f"Add-on ....................... {addonName}")
+	print("\nTemplate synchronization:")
+	for entry in syncReport:
+		print(f"  - {entry}")
+	print(
+		f"\nConfiguration files:\n"
+		f"  buildVars.py ............... {bvStatus}\n"
+		f"  pyproject.toml ............. {ppStatus}",
+	)
+
+
 def main() -> None:
 	"""Execute main CLI entry point for the NVDA Add-on update tool."""
 	parser = argparse.ArgumentParser(
 		description="Non-destructive industrial update tool for NVDA Add-ons.",
 	)
 	parser.add_argument(
-		"addonDir",
-		nargs="?",
+		"-ad", "--addon-dir",
+		dest="addonDir",
 		default=None,
 		help="Path to the root directory of the add-on to update (defaults to current directory).",
 	)
 	parser.add_argument(
-		"--dry-run",
+		"-td", "--template-dir",
+		dest="templateDir",
+		default=None,
+		help="Path to a local directory containing the NVDA AddonTemplate to use instead of fetching it via Git.",
+	)
+	parser.add_argument(
+		"-dr", "--dry-run",
+		"-dr", "--dry-run",
 		dest="dryRun",
 		action="store_true",
 		help="Simulate execution without modifying any files.",
 	)
 	parser.add_argument(
-		"--skip-backup",
+		"-sk", "--skip-backup",
 		dest="skipBackup",
 		action="store_true",
 		help="Disable safety automatic project backup.",
@@ -375,7 +473,6 @@ def main() -> None:
 	print(f"[*] Target Directory: {addonDir}")
 
 	oldBuildvars = os.path.join(addonDir, "buildVars.py")
-	oldPyproject = os.path.join(addonDir, "pyproject.toml")
 
 	if not os.path.exists(oldBuildvars):
 		print(f"[-] Error: '{addonDir}' does not appear to be a valid NVDA Add-on (missing buildVars.py).")
@@ -384,7 +481,7 @@ def main() -> None:
 		sys.exit(1)
 
 	print("[*] Phase 1: Analyzing existing project structure and metadata...")
-	bvMeta, bvGlobals = extractBuildvarsMetadata(oldBuildvars)
+	bvMeta, _ = extractBuildvarsMetadata(oldBuildvars)
 	addonName = bvMeta.get("addon_name", os.path.basename(addonDir))
 	print(f"[+] Target Add-on Identified: {addonName}")
 
@@ -409,113 +506,45 @@ def main() -> None:
 	else:
 		print("[*] Phase 2: Safety backup skipped.")
 
-	print("[*] Phase 3: Provisioning latest official NVDA AddonTemplate via Git...")
-
-	# List of template-relative paths to ignore during synchronization (requested by @CyrilleB79)
-	# Lowercase paths are used to prevent case mismatch issues across OS environments
-	IGNORED_FILES = {
-		#os.path.join(".github", "workflows", "build_addon.yml").lower(),
-	}
-
-	with tempfile.TemporaryDirectory() as tempDir:
-		print("[*] Cloning template into temporary workspace...")
-		templateUrl = "https://github.com/nvaccess/AddonTemplate.git"
-
-		try:
-			subprocess.run(
-				["git", "clone", "--depth", "1", templateUrl, tempDir],
-				check=True,
-				stdout=subprocess.DEVNULL,
-				stderr=subprocess.PIPE,
-			)
-			print("[+] Template cloned successfully.")
-		except (subprocess.CalledProcessError, FileNotFoundError) as e:
-			print("[-] Error: Failed to execute git clone. Make sure Git is available in your PATH.")
-			if isinstance(e, subprocess.CalledProcessError) and e.stderr:
-				print(f"Details: {e.stderr.decode('utf-8', errors='ignore')}")
+	if args.templateDir:
+		templatePath = os.path.abspath(args.templateDir)
+		print(f"[*] Phase 3: Using local template directory: {templatePath}")
+		if not os.path.exists(os.path.join(templatePath, "buildVars.py")):
+			print("[-] Error: Provided template directory does not appear to be a valid NVDA AddonTemplate (missing buildVars.py).")
 			if sys.stdin.isatty():
 				input("\nPress Enter to exit...")
 			sys.exit(1)
-
-		print("[*] Synchronizing template machinery files...")
-		protectedElements = {
-			"readme.md",
-			"changelog.md",
-			"addon",
-			".git",
-			"__pycache__",
-			".venv",
-			"docs",
-			".ruff_cache",
-			"updateaddonfromtemplate.py",
-		}
-		syncReport = []
-
-		# Custom ignore handler for shutil.copytree to filter subdirectories and files
-		def tree_ignore_handler(path: str, names: list[str]) -> list[str]:
-			ignored = []
-			for name in names:
-				full_sub_path = os.path.join(path, name)
-				rel_sub_path = os.path.relpath(full_sub_path, start=tempDir).lower()
-				if rel_sub_path in IGNORED_FILES:
-					ignored.append(name)
-			return ignored
-
-		for item in os.listdir(tempDir):
-			if item.lower() in protectedElements:
-				syncReport.append(f"{item} .................... skipped (protected scope)")
-				continue
-
-			if item in ["buildVars.py", "pyproject.toml"]:
-				continue
-
-			srcItem = os.path.join(tempDir, item)
-			dstItem = os.path.join(addonDir, item)
-
-			# Check if the root item itself is explicitly ignored
-			relItemPath = os.path.relpath(srcItem, start=tempDir).lower()
-			if relItemPath in IGNORED_FILES:
-				syncReport.append(f"{item} .................... skipped (user ignored)")
-				continue
+		runSynchronization(templatePath, addonDir, args.dryRun)
+	else:
+		print("[*] Phase 3: Provisioning latest official NVDA AddonTemplate via Git...")
+		with tempfile.TemporaryDirectory() as tempDir:
+			print("[*] Cloning template into temporary workspace...")
+			templateUrl = "https://github.com/nvaccess/AddonTemplate.git"
 
 			try:
-				if os.path.isdir(srcItem):
-					if not args.dryRun:
-						os.makedirs(dstItem, exist_ok=True)
-						shutil.copytree(srcItem, dstItem, ignore=tree_ignore_handler, dirs_exist_ok=True)
-					syncReport.append(f"{item}/ ................... merged safely")
-				else:
-					if not args.dryRun:
-						shutil.copy2(srcItem, dstItem)
-					syncReport.append(f"{item} .................... synchronized")
-			except Exception as e:
-				syncReport.append(f"{item} .................... failed ({str(e)})")
+				subprocess.run(
+					["git", "clone", "--depth", "1", templateUrl, tempDir],
+					check=True,
+					stdout=subprocess.DEVNULL,
+					stderr=subprocess.PIPE,
+				)
+				print("[+] Template cloned successfully.")
+			except (subprocess.CalledProcessError, FileNotFoundError) as e:
+				print("[-] Error: Failed to execute git clone. Make sure Git is available in your PATH.")
+				if isinstance(e, subprocess.CalledProcessError) and e.stderr:
+					print(f"Details: {e.stderr.decode('utf-8', errors='ignore')}")
+				if sys.stdin.isatty():
+					input("\nPress Enter to exit...")
+				sys.exit(1)
 
-		print("[*] Phase 4: Processing structural configuration merges...")
-		templateBuildvars = os.path.join(tempDir, "buildVars.py")
-		templatePyproject = os.path.join(tempDir, "pyproject.toml")
+			runSynchronization(tempDir, addonDir, args.dryRun)
 
-		bvStatus = mergeBuildvarsFile(oldBuildvars, templateBuildvars, bvMeta, bvGlobals, args.dryRun)
-		ppStatus = mergePyprojectToml(oldPyproject, templatePyproject, bvMeta, args.dryRun)
-
-		print("\n" + "=" * 50)
-		print("UPDATE REPORT")
-		print("=" * 50)
-		print(f"Add-on ....................... {addonName}")
-		print("\nTemplate synchronization:")
-		for entry in syncReport:
-			print(f"  - {entry}")
-		print(
-			f"\nConfiguration files:\n"
-			f"  buildVars.py ............... {bvStatus}\n"
-			f"  pyproject.toml ............. {ppStatus}",
-		)
-
-		if not args.dryRun:
-			print("\n[+] Project successfully updated. Temporary workspace destroyed.")
-		else:
-			print("\n[+] Simulation finished. Workspace cleared.")
+	if not args.dryRun:
+		print("\n[+] Project successfully updated. Workspace cleared.")
+	else:
+		print("\n[+] Simulation finished. Workspace cleared.")
 
 
 if __name__ == "__main__":
 	main()
+    
