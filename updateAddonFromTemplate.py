@@ -143,6 +143,15 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 			if "addon_summary" in metadata and metadata["addon_summary"]:
 				projData["project"]["description"] = metadata["addon_summary"]
 
+			# Extract the repository URL from buildVars metadata
+			# Always preserve the key even if it is empty ("")
+			addonUrl = str(metadata.get("addon_url", "")).strip()
+			
+			if "urls" not in projData["project"]:
+				projData["project"]["urls"] = tomlkit.table()
+
+			projData["project"]["urls"]["Repository"] = addonUrl
+
 			# Build the maintainers multiline array using standard inline tables
 			authorsList = tomlkit.array()
 			authorsList.multiline(True)
