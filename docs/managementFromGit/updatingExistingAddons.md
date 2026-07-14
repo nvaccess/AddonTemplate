@@ -442,4 +442,3 @@ If you have already committed the update and want to return to the previous stat
 ```sh
 git reset --hard {cleanBranch}
 ```
-
