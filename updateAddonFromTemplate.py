@@ -67,7 +67,7 @@ def extractBuildvarsMetadata(filePath: str | Path) -> tuple[dict[str, Any], dict
 
 	metadata: dict[str, Any] = {}
 	globalVars: dict[str, Any] = {}
-	topLevelVars = {
+	topLevelVars: set[str] = {
 		"pythonSources",
 		"excludedFiles",
 		"baseLanguage",
@@ -144,34 +144,34 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 				projData["project"]["description"] = metadata["addon_summary"]
 
 			# Build the maintainers multiline array using standard inline tables
-			authors_list = tomlkit.array()
-			authors_list.multiline(True)
+			authorsList = tomlkit.array()
+			authorsList.multiline(True)
 
 			if "addon_author" in metadata and metadata["addon_author"]:
 				import re
-				raw_authors = str(metadata["addon_author"])
-				parts = [p.strip() for p in raw_authors.split(",") if p.strip()]
+				rawAuthors = str(metadata["addon_author"])
+				parts = [p.strip() for p in rawAuthors.split(",") if p.strip()]
 
 				for part in parts:
 					m = re.match(r"^(.*?)\s*<(.*?)>$", part)
 					if m:
 						t = tomlkit.inline_table()
 						t.update({"name": m.group(1).strip(), "email": m.group(2).strip()})
-						authors_list.append(t)
+						authorsList.append(t)
 					elif part:
 						t = tomlkit.inline_table()
 						t.update({"name": part, "email": ""})
-						authors_list.append(t)
+						authorsList.append(t)
 
-			projData["project"]["maintainers"] = authors_list
+			projData["project"]["maintainers"] = authorsList
 
 			if not dryRun:
 				# Dump to string and sanitize indentation to strict tabs before writing
-				toml_output = tomlkit.dumps(projData)
-				toml_output = toml_output.replace("    ", "\t")
+				tomlOutput = tomlkit.dumps(projData)
+				tomlOutput = tomlOutput.replace("    ", "\t")
 
 				with pProj.open("w", encoding="utf-8") as f:
-					f.write(toml_output)
+					f.write(tomlOutput)
 			return "created from template"
 		except Exception as e:
 			return f"failed to create from template ({str(e)})"
@@ -183,7 +183,7 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 			tplData = tomlkit.parse(f.read())
 
 		# Check if NV Access was ALREADY the original author/maintainer of the project
-		was_originally_nvaccess = False
+		wasOriginallyNvaccess = False
 		if "project" in projData:
 			for field in ["authors", "maintainers"]:
 				if field in projData["project"] and isinstance(projData["project"][field], list):
@@ -192,13 +192,13 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 						if not name and isinstance(item, dict):
 							name = item.get("name", "")
 						if str(name).strip().lower() in ["nv access", "nvaccess"]:
-							was_originally_nvaccess = True
+							wasOriginallyNvaccess = True
 							break
 
 		# Backup dependencies from project to merge them manually later
-		proj_deps = []
+		projDeps = []
 		if "project" in projData and "dependencies" in projData["project"]:
-			proj_deps = list(projData["project"]["dependencies"])
+			projDeps = list(projData["project"]["dependencies"])
 			# Temporarily remove dependencies from project to let template comments win
 			del projData["project"]["dependencies"]
 
@@ -206,40 +206,45 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 		mergedData = deepMergeDicts(cast(dict[str, Any], projData), cast(dict[str, Any], tplData))
 
 		if "project" in mergedData:
-			project_section = mergedData["project"]
+			projectSection = mergedData["project"]
 
 			# 1. Conditional cleanup of NV Access placeholders
 			# Only remove them if NV Access wasn't the original author of the add-on
-			if not was_originally_nvaccess:
+			if not wasOriginallyNvaccess:
 				for field in ["authors", "maintainers"]:
-					if field in project_section and isinstance(project_section[field], list):
-						toml_list = project_section[field]
+					if field in projectSection and isinstance(projectSection[field], list):
+						tomlList = projectSection[field]
 						# Reverse loop to safely delete by index within tomlkit structure
-						for i in range(len(toml_list) - 1, -1, -1):
-							item = toml_list[i]
+						for i in range(len(tomlList) - 1, -1, -1):
+							item = tomlList[i]
 							name = item.get("name", "") if hasattr(item, "get") else ""
 							if not name and isinstance(item, dict):
 								name = item.get("name", "")
 
 							if str(name).strip().lower() in ["nv access", "nvaccess"]:
-								toml_list.pop(i)
+								tomlList.pop(i)
 
 			# 2. Smart merge of dependencies (Template layout and comments win)
-			if "dependencies" in project_section:
-				tpl_deps = project_section["dependencies"]
+			if "dependencies" in projectSection:
+				tplDeps = projectSection["dependencies"]
 
 				# Extract base package name robustly (handles !=, <=, ~=, @ URLs, markers, etc.)
-				def get_base(s: str) -> str:
+				def getBase(s: str) -> str:
+					"""Extract base package name robustly (handles !=, <=, ~=, @ URLs, markers, etc.).
+
+					:param s: The raw dependency string.
+					:return: The normalized base package name in lowercase.
+					"""
 					import re
 					m = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", s.strip())
 					return m.group(0).lower() if m else s.strip().lower()
-				tpl_bases = {get_base(d) for d in tpl_deps}
+				tplBases = {getBase(d) for d in tplDeps}
 
 				# Append custom user dependencies only if they are not already defined by the template
-				for dep in proj_deps:
-					base = get_base(dep)
-					if base not in tpl_bases:
-						tpl_deps.append(dep)
+				for dep in projDeps:
+					base = getBase(dep)
+					if base not in tplBases:
+						tplDeps.append(dep)
 
 		if not dryRun:
 			with pProj.open("w", encoding="utf-8") as f:
@@ -291,14 +296,14 @@ def mergeBuildvarsFile(
 					if val is None:
 						formattedVal = "None"
 					elif isinstance(val, str):
-						is_translatable = key in ["addon_summary", "addon_description", "addon_changelog"]
-						formattedVal = f'_({val!r})' if is_translatable else repr(val)
+						isTranslatable = key in ["addon_summary", "addon_description", "addon_changelog"]
+						formattedVal = f'_({val!r})' if isTranslatable else repr(val)
 					else:
 						formattedVal = str(val)
 
 					if kw.end_lineno is not None:
-						line_content = tplLines[kw.lineno - 1]
-						indent = line_content[: len(line_content) - len(line_content.lstrip())]
+						lineContent = tplLines[kw.lineno - 1]
+						indent = lineContent[: len(lineContent) - len(lineContent.lstrip())]
 						replacements[(kw.lineno - 1, kw.end_lineno)] = f"{indent}{key}={formattedVal},\n"
 
 		elif isinstance(node, ast.Assign) and len(node.targets) == 1:
@@ -307,8 +312,8 @@ def mergeBuildvarsFile(
 				key = target.id
 				valExpression = globalVars[key]
 				if node.end_lineno is not None:
-					line_content = tplLines[node.lineno - 1]
-					indent = line_content[: len(line_content) - len(line_content.lstrip())]
+					lineContent = tplLines[node.lineno - 1]
+					indent = lineContent[: len(lineContent) - len(lineContent.lstrip())]
 					prefix = f"{indent}import os\n" if "os." in valExpression else ""
 					replacements[(node.lineno - 1, node.end_lineno)] = (
 						f"{prefix}{indent}{key} = {valExpression}\n"
@@ -319,8 +324,8 @@ def mergeBuildvarsFile(
 				key = node.target.id
 				valExpression = globalVars[key]
 				if node.end_lineno is not None:
-					line_content = tplLines[node.lineno - 1]
-					indent = line_content[: len(line_content) - len(line_content.lstrip())]
+					lineContent = tplLines[node.lineno - 1]
+					indent = lineContent[: len(lineContent) - len(lineContent.lstrip())]
 					typeStr = ast.unparse(node.annotation)
 					prefix = f"{indent}import os\n" if "os." in valExpression else ""
 					replacements[(node.lineno - 1, node.end_lineno)] = (
@@ -343,6 +348,7 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> None:
 	:param tempDir: Path to the local temporary directory containing the template files.
 	:param addonDir: Path to the target add-on root directory.
 	:param dryRun: If True, simulate the sync without writing changes to disk.
+	:return: None
 	"""
 	print("[*] Synchronizing template machinery files...")
 	protectedElements = {
@@ -354,9 +360,23 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> None:
 		".venv",
 		"docs",
 		".ruff_cache",
-		#"updateaddonfromtemplate.py",
 	}
-	syncReport = []
+
+	# Dynamically load custom ignore patterns from the target add-on directory if they exist
+	ignoreFilePath = os.path.join(addonDir, ".addonmergeignore")
+	if os.path.exists(ignoreFilePath):
+		print("[*] Reading local custom exclusions from .addonmergeignore...")
+		try:
+			with open(ignoreFilePath, "r", encoding="utf-8") as f:
+				for line in f:
+					cleanLine = line.strip().lower()
+					# Exclude comments and empty lines
+					if cleanLine and not cleanLine.startswith("#"):
+						protectedElements.add(cleanLine)
+		except Exception as e:
+			print(f"[-] Warning: Failed to parse .addonmergeignore ({e})")
+
+	syncReport: list[str] = []
 
 	for item in os.listdir(tempDir):
 		if item.lower() in protectedElements:
@@ -428,7 +448,6 @@ def main() -> None:
 	)
 	parser.add_argument(
 		"-dr", "--dry-run",
-		"-dr", "--dry-run",
 		dest="dryRun",
 		action="store_true",
 		help="Simulate execution without modifying any files.",
@@ -469,9 +488,14 @@ def main() -> None:
 	if args.dryRun:
 		print("[!] RUNNING IN SIMULATION MODE (--dry-run). No files will be modified.")
 
-	if not args.skipBackup and not args.dryRun:
+	print("[*] Phase 2: Safety backup verification...")
+	if args.dryRun:
+		print("[*] Safety backup skipped (simulation mode active).")
+	elif args.skipBackup:
+		print("[!] Safety backup skipped (--skip-backup requested by user).")
+	else:
 		backupDir = f"{addonDir}_bak_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-		print(f"[*] Phase 2: Creating safety automatic backup in: {os.path.basename(backupDir)}...")
+		print(f"[*] Creating safety automatic backup in: {os.path.basename(backupDir)}...")
 		try:
 			shutil.copytree(
 				addonDir,
@@ -484,8 +508,6 @@ def main() -> None:
 			if sys.stdin.isatty():
 				input("\nPress Enter to exit...")
 			sys.exit(1)
-	else:
-		print("[*] Phase 2: Safety backup skipped.")
 
 	if args.templateDir:
 		templatePath = os.path.abspath(args.templateDir)
@@ -528,3 +550,4 @@ def main() -> None:
 
 if __name__ == "__main__":
 	main()
+    
