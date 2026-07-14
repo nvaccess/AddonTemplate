@@ -2,6 +2,8 @@
 # This file is covered by the GNU General Public License.
 # See the file COPYING for more details.
 
+from collections.abc import MutableMapping, MutableSequence
+import re
 import argparse
 import ast
 import os
@@ -30,8 +32,6 @@ def deepMergeDicts(dictProj: dict[str, Any], dictTpl: dict[str, Any]) -> dict[st
 	:param dictTpl: The template dictionary whose values will be merged into dictProj.
 	:return: The updated dictProj with merged values from dictTpl.
 	"""
-	from collections.abc import MutableMapping, MutableSequence
-
 	for key, value in dictTpl.items():
 		if key in dictProj:
 			projVal = dictProj[key]
@@ -148,7 +148,6 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 			authorsList.multiline(True)
 
 			if "addon_author" in metadata and metadata["addon_author"]:
-				import re
 				rawAuthors = str(metadata["addon_author"])
 				parts = [p.strip() for p in rawAuthors.split(",") if p.strip()]
 
@@ -235,7 +234,6 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 					:param s: The raw dependency string.
 					:return: The normalized base package name in lowercase.
 					"""
-					import re
 					m = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", s.strip())
 					return m.group(0).lower() if m else s.strip().lower()
 				tplBases = {getBase(d) for d in tplDeps}

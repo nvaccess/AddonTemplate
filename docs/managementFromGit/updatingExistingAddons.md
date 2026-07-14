@@ -59,8 +59,8 @@ The script automatically supports updating two types of legacy add-ons:
 
 Before running the tool, ensure your system meets the following requirements:
 
-- **Python**: Version **3.13** or newer must be installed (matching the template's required Python version)[cite: 1].
-- **Git**: Git must be installed and available in your system ```PATH```[cite: 1].
+- **Python**: Version **3.13** or newer must be installed (matching the template's required Python version).
+- **Git**: Git must be installed and available in your system ```PATH```.
 - **Dependency Management (tomlkit)**: Because the automated script relies on the third-party `tomlkit` library to safely parse and merge configurations, it must be installed in your global Python environment before execution. This is necessary because legacy add-on repositories do not include this dependency yet, and it is not yet present by default in the template's stable `master` branch.
 
   To install or update `tomlkit` globally, run the following command in your terminal:
@@ -117,21 +117,104 @@ git add .
 git commit -m "chore: sync infrastructure with AddonTemplate"
 ```
 
-### Excluding specific template files or directories
+### Using the Update Tool via Command Line
 
-By default, the script synchronizes every infrastructure file provided by AddonTemplate.
+The `updateAddonFromTemplate.py` script provides a non-destructive industrial update engine to align your local add-on repository layout with the latest structure of the official NVDA `AddonTemplate`.
 
-If you want to preserve specific components from your repository (for example, a customized GitHub workflow or directory), you can exclude them from synchronization.
+You can execute the script with various command-line arguments to customize the update workflow.
 
-Open ```updateAddonFromTemplate.py``` and locate the ```IGNORED_FILES``` set near the beginning of the ```main()``` function:
+#### Available Options
 
-```python
-IGNORED_FILES = {
-    os.path.join(".github", "workflows", "build_addon.yml").lower(),
-}
+| Short Flag | Long Argument | Description | Default Value |
+| :--- | :--- | :--- | :--- |
+| `-ad` | `--addon-dir` | Path to the root directory of the local add-on you want to update. If not specified, the script automatically walks up from your current directory to find `buildVars.py`. | Current working directory |
+| `-td` | `--template-dir` | Path to a local clone/directory of the NVDA `AddonTemplate`. When provided, the tool skips fetching the template via Git and synchronizes directly using this local reference. | None (clones from GitHub) |
+| `-dr` | `--dry-run` | Simulates the execution. It analyzes structure, logs planned changes, and builds reports without writing or modifying any file on disk. | Disabled |
+| `-s` | `--skip-backup` | Disables the automatic creation of a timestamped backup directory (e.g., `addonName_bak_YYYYMMDD_HHMMSS`) before processing updates. | Disabled (Backup is created) |
+| `-h` | `--help` | Displays the default automated help menu listing all available parameters. | N/A |
+
+#### Customizing Exclusions with .addonmergeignore
+
+Rather than modifying the `updateAddonFromTemplate.py` core source code or changing its internal `PROTECTED_ELEMENTS` array, the update tool includes a robust file-exclusion system driven by a local file named `.addonmergeignore`.
+
+This architectural design allows developers to cleanly decouple their project-specific freeze preferences from the update engine machinery.
+
+##### How to Use `.addonmergeignore`
+To declare custom exceptions, create a plain text file named `.addonmergeignore` and place it directly **at the root of your target add-on repository**. 
+* Inside this file, list the names of the files or folders you want the tool to skip during synchronization.
+* You can write one pattern per line. Empty lines and lines starting with `#` are automatically treated as comments and ignored.
+
+For instance, if you wish to prevent the synchronization process from overwriting your custom execution scripts or your exclusion mapping file itself, simply add them to the file:
+```
+# Freeze the synchronization script version
+updateaddonfromtemplate.py
+# Protect your local merge settings file from being replaced
+.addonmergeignore
 ```
 
-Add any template-relative path to this set to prevent the corresponding file or directory from being synchronized.
+##### Crucial Requirements & Design Constraints
+
+1. **Case-Insensitivity:**
+The update tool evaluates exclusions using a standardized, case-insensitive matching algorithm. This ensures maximum cross-platform reliability (especially between Windows and Unix-like environments). Since the script automatically normalizes all inputs to lowercase during execution, **you can write your rules using any casing you prefer** (e.g., `UpdateAddonFromTemplate.py` or `updateaddonfromtemplate.py` will both work perfectly).
+
+2. **File Location Requirement:**
+The update engine always loads custom exclusions from the target add-on's root folder being updated. Therefore, **the `.addonmergeignore` file must always reside inside the destination add-on directory**, even if you are executing the `updateAddonFromTemplate.py` script from a completely different directory or an external workspace.
+
+#### Usage Examples
+
+Depending on your workflow, the script can be executed either directly from within your add-on repository or from an external directory.
+
+##### 1. Standard Automatic Update
+Downloads the latest remote template, creates a safety backup of your repository, and non-destructively synchronizes the machinery files.
+
+* **Syntax A (Script inside the add-on repository):**
+```
+python updateAddonFromTemplate.py
+```
+
+* **Syntax B (Script outside the add-on repository):**
+```
+python /path/to/updateAddonFromTemplate.py -ad /path/to/my-nvda-addon
+```
+
+##### 2. Updating from a Local Template Cache (Offline/Development)
+Useful when testing local modifications applied to the `AddonTemplate` or when working without an active internet connection.
+
+* **Syntax A (Script inside the add-on repository):**
+```
+python updateAddonFromTemplate.py -td /path/to/local/AddonTemplate
+```
+
+* **Syntax B (Script outside the add-on repository):**
+```
+python /path/to/updateAddonFromTemplate.py -ad /path/to/my-nvda-addon -td /path/to/local/AddonTemplate
+```
+
+##### 3. Simulating Changes Safely (Dry Run)
+Analyzes structural layouts, evaluates configurations, reads the `.addonmergeignore` directives, and builds reports without writing anything to disk.
+
+* **Syntax A (Script inside the add-on repository):**
+```
+python updateAddonFromTemplate.py --dry-run
+```
+
+* **Syntax B (Script outside the add-on repository):**
+```
+python /path/to/updateAddonFromTemplate.py --dry-run -ad /path/to/my-nvda-addon
+```
+
+##### 4. Speeding Up with Backup Omission
+Target a project repository while skipping the automated safety backup creation phase to speed up execution.
+
+* **Syntax A (Script inside the add-on repository):**
+```
+python updateAddonFromTemplate.py --skip-backup
+```
+
+* **Syntax B (Script outside the add-on repository):**
+```
+python /path/to/updateAddonFromTemplate.py -ad /path/to/my-nvda-addon --skip-backup
+```
 
 ---
 
@@ -359,3 +442,4 @@ If you have already committed the update and want to return to the previous stat
 ```sh
 git reset --hard {cleanBranch}
 ```
+
