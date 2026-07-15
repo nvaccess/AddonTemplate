@@ -59,13 +59,11 @@ Before initiating any update workflow (automated or manual), please complete the
 
 ## Recommended Method: Automated Update Using the Companion Tool
 
-To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion update script is included in AddonTemplate: `updateAddonFromTemplate.py`.
+To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion utility script is included in AddonTemplate: `syncAddonWithTemplate.py`.
 
-This script automatically handles the extraction of old metadata.
+This script automatically extracts your legacy project settings (such as the add-on name, summary, authors, and repository URL from `buildVars.py`) and merges them cleanly into the newly generated `pyproject.toml` file, while safely preserving empty values if certain metadata is not set.
 
-It also cleans template placeholder data.
-For example, it removes "nvaccess" from the authors list if it is a third-party add-on and NV Access is not actually among its maintainers.
-This cleanup prevents copying the template author field onto the target add-on during the update process.
+This automation ensures a seamless transition to the new template infrastructure without losing your original configuration.
 
 The script automatically supports updating two types of legacy add-ons:
 
@@ -108,14 +106,14 @@ The script is highly flexible and supports two execution modes:
    It will automatically locate the project root by searching for `buildVars.py`.
 
    ```sh
-   uv run updateAddonFromTemplate.py
+   uv run python syncAddonWithTemplate.py
    ```
 
 2. **Target Directory Mode (With argument):**
    Run the script from any working directory by supplying the optional `addonDir` path (relative or absolute) pointing to the add-on repository you wish to update.
 
    ```sh
-   uv run updateAddonFromTemplate.py ../MyAddon
+   uv run python syncAddonWithTemplate.py ../MyAddon
    ```
 
 > [!NOTE]
@@ -129,7 +127,7 @@ uv sync
 uv run scons
 ```
 
-If everything builds successfully, remove the `>_bak_<timestamp>`, stage and commit the updated infrastructure:
+If everything builds successfully, remove the <addon>_bak_<timestamp> directory, stage and commit the updated infrastructure:
 
 ```sh
 git clean -f
@@ -139,7 +137,7 @@ git commit -m "chore: sync infrastructure with AddonTemplate"
 
 ### Using the Update Tool via Command Line
 
-The `updateAddonFromTemplate.py` script provides a non-destructive industrial update engine to align your local add-on repository layout with the latest structure of the official NVDA `AddonTemplate`.
+The `syncAddonWithTemplate.py` script provides a non-destructive industrial update engine to align your local add-on repository layout with the latest structure of the official NVDA `AddonTemplate`.
 
 You can execute the script with various command-line arguments to customize the update workflow.
 
@@ -155,7 +153,7 @@ You can execute the script with various command-line arguments to customize the 
 
 #### Customizing Exclusions with `.addonmergeignore`
 
-Rather than modifying the `updateAddonFromTemplate.py` core source code or changing its internal `PROTECTED_ELEMENTS` array, the update tool includes a robust file-exclusion system driven by a local file named `.addonmergeignore`.
+Rather than modifying the `syncAddonWithTemplate.py` core source code or changing its internal `PROTECTED_ELEMENTS` array, the update tool includes a robust file-exclusion system driven by a local file named `.addonmergeignore`.
 
 This architectural design allows developers to cleanly decouple their project-specific freeze preferences from the update engine machinery.
 
@@ -172,7 +170,7 @@ For instance, if you wish to prevent the synchronization process from overwritin
 
 ```sh
 # Freeze the synchronization script version
-updateaddonfromtemplate.py
+syncAddonWithTemplate.py
 # Protect your local merge settings file from being replaced
 .addonmergeignore
 ```
@@ -186,7 +184,7 @@ updateaddonfromtemplate.py
 
 2. **File Location Requirement:**
    The update engine always loads custom exclusions from the target add-on's root folder being updated.
-   Therefore, **the `.addonmergeignore` file must always reside inside the destination add-on directory**, even if you are executing the `updateAddonFromTemplate.py` script from a completely different directory or an external workspace.
+   Therefore, **the `.addonmergeignore` file must always reside inside the destination add-on directory**, even if you are executing the `syncAddonWithTemplate.py` script from a completely different directory or an external workspace.
 
 #### Usage Examples
 
@@ -199,13 +197,13 @@ Downloads the latest remote template, creates a safety backup of your repository
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  python updateAddonFromTemplate.py
+  uv run python syncAddonWithTemplate.py
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
   ```sh
-  python /path/to/updateAddonFromTemplate.py -ad /path/to/my-nvda-addon
+  uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon
   ```
 
 ##### 2. Updating from a Local Template Cache (Offline/Development)
@@ -215,13 +213,13 @@ Useful when testing local modifications applied to the `AddonTemplate` or when w
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  python updateAddonFromTemplate.py -td /path/to/local/AddonTemplate
+  uv run python syncAddonWithTemplate.py -td /path/to/local/AddonTemplate
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
   ```sh
-  python /path/to/updateAddonFromTemplate.py -ad /path/to/my-nvda-addon -td /path/to/local/AddonTemplate
+  uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon -td /path/to/local/AddonTemplate
   ```
 
 ##### 3. Simulating Changes Safely (Dry Run)
@@ -231,13 +229,13 @@ Analyzes structural layouts, evaluates configurations, reads the `.addonmergeign
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  python updateAddonFromTemplate.py --dry-run
+  uv run python syncAddonWithTemplate.py --dry-run
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
   ```sh
-  python /path/to/updateAddonFromTemplate.py --dry-run -ad /path/to/my-nvda-addon
+  uv run python /path/to/syncAddonWithTemplate.py --dry-run -ad /path/to/my-nvda-addon
   ```
 
 ##### 4. Speeding Up with Backup Omission
@@ -247,13 +245,13 @@ Target a project repository while skipping the automated safety backup creation 
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  python updateAddonFromTemplate.py --skip-backup
+  uv run python syncAddonWithTemplate.py --skip-backup
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
   ```sh
-  python /path/to/updateAddonFromTemplate.py -ad /path/to/my-nvda-addon --skip-backup
+  uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon --skip-backup
   ```
 
 ---
@@ -267,13 +265,13 @@ If you prefer not to use the automated tool, you can manually merge the latest v
 1. If you haven't done it yet, from your add-on repository, add the addonTemplate as a remote.
 
 ```sh
-git remote add addonTemplate https://github.com/nvaccess/addonTemplate.git
+git remote add template https://github.com/nvaccess/addonTemplate.git
 ```
 
-2. Fetch the addonTemplate:
+2. Fetch the template:
 
 ```sh
-fetch addonTemplate
+git fetch template
 ```
 
 ### Merging the latest template

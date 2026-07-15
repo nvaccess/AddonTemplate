@@ -81,7 +81,7 @@ exclude = [
 	"__pycache__",
 	".venv",
 	"buildVars.py",
-	"updateAddonFromTemplate.py",
+	"syncAddonWithTemplate.py",
 ]
 
 [tool.ruff.format]
@@ -120,7 +120,7 @@ exclude = [
 	".venv",
 	"site_scons",
 	".github/scripts",
-	"updateAddonFromTemplate.py",
+	"syncAddonWithTemplate.py",
 	# When excluding concrete paths relative to a directory,
 	# not matching multiple folders by name e.g. `__pycache__`,
 	# paths are relative to the configuration file.
