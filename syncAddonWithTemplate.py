@@ -442,8 +442,8 @@ def main() -> None:
 		description="Non-destructive industrial update tool for NVDA Add-ons.",
 	)
 	parser.add_argument(
-		"-ad", "--addon-dir",
-		dest="addonDir",
+		"addonDir",
+		nargs="?",
 		default=None,
 		help="Path to the root directory of the add-on to update (defaults to current directory).",
 	)
