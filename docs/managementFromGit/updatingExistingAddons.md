@@ -75,6 +75,81 @@ The script automatically supports updating two types of legacy add-ons:
   For newer add-ons that already use the `AddonInfo` object but need upstream template updates, the tool checks for any missing metadata keys in `buildVars.py` to insert them.
   It safely updates `pyproject.toml` dependencies and versions while preserving your custom configuration rules for tools like `pyright` and `ruff`.
 
+## Pre-requisites for initial setup
+
+1. Create a repository, for example on GitHub, providing README and LICENSE files.
+
+2. Clone the repository to your local computer:
+
+   ```sh
+   git clone https://github.com/{repoName}.git
+   ```
+
+3. Go to the folder where your repository was cloned:
+
+   ```sh
+   cd {repoFolder}
+   ```
+
+4. In this folder, create an `addon` subfolder and store the code for your add-on.
+
+5. Commit your initial changes:
+
+   ```sh
+   git add .
+   git commit -m "Initial commit"
+   ```
+
+## Updating an Existing Add-on
+
+AddonTemplate evolves over time and regularly receives improvements, bug fixes, new GitHub workflows, and build system updates.
+
+You can merge the latest template changes into your repository instead of manually copying updated files.
+This document explains both the recommended automated update procedure and the manual Git-based workflow.
+
+> [!NOTE]
+> Updating from AddonTemplate only affects your project's infrastructure (build scripts, GitHub workflows, configuration files, etc.).
+> It does **not** modify your add-on's source code.
+
+---
+
+## Before you begin
+
+Before initiating any update workflow (automated or manual), please complete these safety checks:
+
+* **Check repository status**:
+  Ensure your working tree is clean.
+
+  ```sh
+  git status
+  ```
+
+* **Commit or stash**:
+  Save or stash any pending local modifications.
+
+* **Use a dedicated branch**:
+  It is highly recommended to perform the update on a separate, dedicated branch to isolate changes.
+
+---
+
+## Recommended Method: Automated Update Using the Companion Tool
+
+To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion utility script is included in AddonTemplate: `syncAddonWithTemplate.py`.
+
+This script automatically extracts your legacy project settings (such as the add-on name, summary, authors, and repository URL from `buildVars.py`) and merges them cleanly into the newly generated `pyproject.toml` file, while safely preserving empty values if certain metadata is not set.
+
+This automation ensures a seamless transition to the new template infrastructure without losing your original configuration.
+
+The script automatically supports updating two types of legacy add-ons:
+
+* **Legacy Structure (Dictionary-based without pyproject.toml):**
+  For older add-ons where `addon_info` was defined as a standard dictionary, the tool automatically migrates the metadata to the modern `AddonInfo` object structure.
+  It generates a new, fully populated `pyproject.toml` file matching the latest template standards, and synchronizes all infrastructure files.
+
+* **Modern Structure (AddonInfo-based):**
+  For newer add-ons that already use the `AddonInfo` object but need upstream template updates, the tool checks for any missing metadata keys in `buildVars.py` to insert them.
+  It safely updates `pyproject.toml` dependencies and versions while preserving your custom configuration rules for tools like `pyright` and `ruff`.
+
 ### Prerequisites
 
 Before running the tool, ensure your system meets the following requirements:
@@ -106,14 +181,14 @@ The script is highly flexible and supports two execution modes:
    It will automatically locate the project root by searching for `buildVars.py`.
 
    ```sh
-   uv run python syncAddonWithTemplate.py
+   uv run python syncAddonWithTemplate.py -ad .
    ```
 
 2. **Target Directory Mode (With argument):**
    Run the script from any working directory by supplying the optional `addonDir` path (relative or absolute) pointing to the add-on repository you wish to update.
 
    ```sh
-   uv run python syncAddonWithTemplate.py ../MyAddon
+   uv run python syncAddonWithTemplate.py -ad ../MyAddon
    ```
 
 > [!NOTE]
@@ -197,7 +272,7 @@ Downloads the latest remote template, creates a safety backup of your repository
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  uv run python syncAddonWithTemplate.py
+  uv run python syncAddonWithTemplate.py -ad .
   ```
 
 * **Syntax B (Script outside the add-on repository):**
@@ -213,7 +288,7 @@ Useful when testing local modifications applied to the `AddonTemplate` or when w
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  uv run python syncAddonWithTemplate.py -td /path/to/local/AddonTemplate
+  uv run python syncAddonWithTemplate.py -ad . -td /path/to/local/AddonTemplate
   ```
 
 * **Syntax B (Script outside the add-on repository):**
@@ -229,7 +304,7 @@ Analyzes structural layouts, evaluates configurations, reads the `.addonmergeign
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  uv run python syncAddonWithTemplate.py --dry-run
+  uv run python syncAddonWithTemplate.py -ad . --dry-run
   ```
 
 * **Syntax B (Script outside the add-on repository):**
@@ -245,7 +320,7 @@ Target a project repository while skipping the automated safety backup creation 
 * **Syntax A (Script inside the add-on repository):**
 
   ```sh
-  uv run python syncAddonWithTemplate.py --skip-backup
+  uv run python syncAddonWithTemplate.py -ad . --skip-backup
   ```
 
 * **Syntax B (Script outside the add-on repository):**
@@ -253,6 +328,26 @@ Target a project repository while skipping the automated safety backup creation 
   ```sh
   uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon --skip-backup
   ```
+
+##### 5. Run without Installation (`--with` option)
+
+If you wish to execute the synchronization script directly without installing its mandatory dependencies (like `tomlkit`) into your current environment beforehand, you can request `uv` to fetch and expose the packages temporarily during the command lifetime by using the `--with` flag:
+
+```sh
+uv run --with tomlkit python syncAddonWithTemplate.py -ad .
+```
+
+---
+
+## Unit Testing the Add-on
+
+Ensuring your add-on behavior remains consistent during development and following template updates is done through unit testing. Tests are stored in the `tests/` subdirectory and can be validated quickly using `pytest` inside the virtual environment managed by `uv`.
+
+To run the unit test suite on your local workspace, use the following command:
+
+```sh
+uv run pytest
+```
 
 ---
 
@@ -463,4 +558,4 @@ If you have already committed the update and want to return to the previous stat
 
 ```sh
 git reset --hard {cleanBranch}
-```
+``````

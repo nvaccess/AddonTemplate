@@ -22,6 +22,108 @@ import tomlkit
 TOMLKIT_AVAILABLE: bool = True
 
 
+def parseAstDict(node: ast.Dict) -> dict[str, Any]:
+	"""Extract key-value pairs from an AST Dict node.
+
+	:param node: The ast.Dict node to parse.
+	:return: A dictionary containing the extracted keys and values.
+	"""
+	extracted: dict[str, Any] = {}
+	for keyNode, valNode in zip(node.keys, node.values):
+		if keyNode is None:
+			continue
+		key = getattr(keyNode, "value", None)
+		if isinstance(valNode, ast.Call) and getattr(valNode.func, "id", None) == "_":
+			valNode = valNode.args[0]
+		val = getattr(valNode, "value", None)
+		if key is not None:
+			extracted[key] = val
+	return extracted
+
+
+def parseAstKeywords(keywords: list[ast.keyword]) -> dict[str, Any]:
+	"""Extract key-value pairs from a list of AST keyword nodes.
+
+	:param keywords: The list of ast.keyword nodes to parse.
+	:return: A dictionary containing the extracted keys and values.
+	"""
+	extracted: dict[str, Any] = {}
+	for keyword in keywords:
+		key = keyword.arg
+		valNode = keyword.value
+		if isinstance(valNode, ast.Call) and getattr(valNode.func, "id", None) == "_":
+			valNode = valNode.args[0]
+		val = getattr(valNode, "value", None)
+		if key is not None:
+			extracted[key] = val
+	return extracted
+
+
+def formatAuthorList(rawAuthors: str) -> tomlkit.items.Array:
+	"""Convert a comma-separated string of authors into a tomlkit multiline array of inline tables.
+
+	:param rawAuthors: The raw authors string (e.g., "Author Name <email@example.com>, Another").
+	:return: A tomlkit.items.Array object containing inline tables.
+	"""
+	authorsList = tomlkit.array()
+	authorsList.multiline(True)
+	parts = [p.strip() for p in rawAuthors.split(",") if p.strip()]
+
+	for part in parts:
+		m = re.match(r"^(.*?)\s*<(.*?)>$", part)
+		if m:
+			t = tomlkit.inline_table()
+			t.update({"name": m.group(1).strip(), "email": m.group(2).strip()})
+			authorsList.append(t)
+		elif part:
+			t = tomlkit.inline_table()
+			t.update({"name": part, "email": ""})
+			authorsList.append(t)
+	return authorsList
+
+
+def cleanupPlaceholderAuthors(projectSection: dict[str, Any]) -> None:
+	"""Remove NV Access placeholder entries from authors and maintainers fields in-place.
+
+	:param projectSection: The project table/dictionary within the TOML structure.
+	:return: None
+	"""
+	for field in ["authors", "maintainers"]:
+		if field in projectSection and isinstance(projectSection[field], list):
+			tomlList = projectSection[field]
+			# Reverse loop to safely delete by index within tomlkit structure
+			for i in range(len(tomlList) - 1, -1, -1):
+				item = tomlList[i]
+				name = item.get("name", "") if hasattr(item, "get") else ""
+				if not name and isinstance(item, dict):
+					name = item.get("name", "")
+
+				if str(name).strip().lower() in ["nv access", "nvaccess"]:
+					tomlList.pop(i)
+
+
+def getBasePackageName(s: str) -> str:
+	"""Extract base package name robustly (handles !=, <=, ~=, @ URLs, markers, etc.).
+
+	:param s: The raw dependency string.
+	:return: The normalized base package name in lowercase.
+	"""
+	m = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", s.strip())
+	return m.group(0).lower() if m else s.strip().lower()
+
+
+def replaceAstRange(tplLines: list[str], replacements: dict[tuple[int, int], str]) -> None:
+	"""Apply AST line replacements on a line-by-line list in reverse order.
+
+	:param tplLines: The list of lines representing the file content.
+	:param replacements: A dictionary mapping (start_line, end_line) tuples to the replacing string.
+	:return: None
+	"""
+	sortedRanges = sorted(replacements.keys(), key=lambda x: x[0], reverse=True)
+	for start, end in sortedRanges:
+		tplLines[start:end] = [replacements[(start, end)]]
+
+
 def deepMergeDicts(dictProj: dict[str, Any], dictTpl: dict[str, Any]) -> dict[str, Any]:
 	"""Recursively merges dictTpl into dictProj.
 
@@ -86,24 +188,9 @@ def extractBuildvarsMetadata(filePath: str | Path) -> tuple[dict[str, Any], dict
 
 			if varName == "addon_info":
 				if isinstance(node.value, ast.Dict):
-					for keyNode, valNode in zip(node.value.keys, node.value.values):
-						if keyNode is None:
-							continue
-						key = getattr(keyNode, "value", None)
-						if isinstance(valNode, ast.Call) and getattr(valNode.func, "id", None) == "_":
-							valNode = valNode.args[0]
-						val = getattr(valNode, "value", None)
-						if key is not None:
-							metadata[key] = val
+					metadata.update(parseAstDict(node.value))
 				elif isinstance(node.value, ast.Call) and getattr(node.value.func, "id", None) == "AddonInfo":
-					for keyword in node.value.keywords:
-						key = keyword.arg
-						valNode = keyword.value
-						if isinstance(valNode, ast.Call) and getattr(valNode.func, "id", None) == "_":
-							valNode = valNode.args[0]
-						val = getattr(valNode, "value", None)
-						if key is not None:
-							metadata[key] = val
+					metadata.update(parseAstKeywords(node.value.keywords))
 			elif varName in topLevelVars:
 				globalVars[varName] = ast.unparse(node.value)
 		elif isinstance(node, ast.AnnAssign):
@@ -153,25 +240,8 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 			projData["project"]["urls"]["Repository"] = addonUrl
 
 			# Build the maintainers multiline array using standard inline tables
-			authorsList = tomlkit.array()
-			authorsList.multiline(True)
-
 			if "addon_author" in metadata and metadata["addon_author"]:
-				rawAuthors = str(metadata["addon_author"])
-				parts = [p.strip() for p in rawAuthors.split(",") if p.strip()]
-
-				for part in parts:
-					m = re.match(r"^(.*?)\s*<(.*?)>$", part)
-					if m:
-						t = tomlkit.inline_table()
-						t.update({"name": m.group(1).strip(), "email": m.group(2).strip()})
-						authorsList.append(t)
-					elif part:
-						t = tomlkit.inline_table()
-						t.update({"name": part, "email": ""})
-						authorsList.append(t)
-
-			projData["project"]["maintainers"] = authorsList
+				projData["project"]["maintainers"] = formatAuthorList(metadata["addon_author"])
 
 			if not dryRun:
 				# Dump to string and sanitize indentation to strict tabs before writing
@@ -219,37 +289,16 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 			# 1. Conditional cleanup of NV Access placeholders
 			# Only remove them if NV Access wasn't the original author of the add-on
 			if not wasOriginallyNvaccess:
-				for field in ["authors", "maintainers"]:
-					if field in projectSection and isinstance(projectSection[field], list):
-						tomlList = projectSection[field]
-						# Reverse loop to safely delete by index within tomlkit structure
-						for i in range(len(tomlList) - 1, -1, -1):
-							item = tomlList[i]
-							name = item.get("name", "") if hasattr(item, "get") else ""
-							if not name and isinstance(item, dict):
-								name = item.get("name", "")
-
-							if str(name).strip().lower() in ["nv access", "nvaccess"]:
-								tomlList.pop(i)
+				cleanupPlaceholderAuthors(projectSection)
 
 			# 2. Smart merge of dependencies (Template layout and comments win)
 			if "dependencies" in projectSection:
 				tplDeps = projectSection["dependencies"]
-
-				# Extract base package name robustly (handles !=, <=, ~=, @ URLs, markers, etc.)
-				def getBase(s: str) -> str:
-					"""Extract base package name robustly (handles !=, <=, ~=, @ URLs, markers, etc.).
-
-					:param s: The raw dependency string.
-					:return: The normalized base package name in lowercase.
-					"""
-					m = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", s.strip())
-					return m.group(0).lower() if m else s.strip().lower()
-				tplBases = {getBase(d) for d in tplDeps}
+				tplBases = {getBasePackageName(d) for d in tplDeps}
 
 				# Append custom user dependencies only if they are not already defined by the template
 				for dep in projDeps:
-					base = getBase(dep)
+					base = getBasePackageName(dep)
 					if base not in tplBases:
 						tplDeps.append(dep)
 
@@ -339,9 +388,7 @@ def mergeBuildvarsFile(
 						f"{prefix}{indent}{key}: {typeStr} = {valExpression}\n"
 					)
 
-	sortedRanges = sorted(replacements.keys(), key=lambda x: x[0], reverse=True)
-	for start, end in sortedRanges:
-		tplLines[start:end] = [replacements[(start, end)]]
+	replaceAstRange(tplLines, replacements)
 
 	if not dryRun:
 		with pProj.open("w", encoding="utf-8") as f:
@@ -442,8 +489,8 @@ def main() -> None:
 		description="Non-destructive industrial update tool for NVDA Add-ons.",
 	)
 	parser.add_argument(
-		"addonDir",
-		nargs="?",
+		"-ad", "--addon-dir",
+		dest="addonDir",
 		default=None,
 		help="Path to the root directory of the add-on to update (defaults to current directory).",
 	)
@@ -460,7 +507,7 @@ def main() -> None:
 		help="Simulate execution without modifying any files.",
 	)
 	parser.add_argument(
-		"-sk", "--skip-backup",
+		"-s", "--skip-backup",
 		dest="skipBackup",
 		action="store_true",
 		help="Disable safety automatic project backup.",
