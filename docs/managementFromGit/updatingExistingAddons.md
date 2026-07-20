@@ -6,13 +6,13 @@
 
 2. Clone the repository to your local computer:
 
-   ```sh
+   ```
    git clone https://github.com/{repoName}.git
    ```
 
 3. Go to the folder where your repository was cloned:
 
-   ```sh
+   ```
    cd {repoFolder}
    ```
 
@@ -20,7 +20,7 @@
 
 5. Commit your initial changes:
 
-   ```sh
+   ```
    git add .
    git commit -m "Initial commit"
    ```
@@ -45,82 +45,7 @@ Before initiating any update workflow (automated or manual), please complete the
 * **Check repository status**:
   Ensure your working tree is clean.
 
-  ```sh
-  git status
   ```
-
-* **Commit or stash**:
-  Save or stash any pending local modifications.
-
-* **Use a dedicated branch**:
-  It is highly recommended to perform the update on a separate, dedicated branch to isolate changes.
-
----
-
-## Recommended Method: Automated Update Using the Companion Tool
-
-To streamline the synchronization process and avoid dealing with syntax errors or manual merge conflicts in infrastructure files, a companion utility script is included in AddonTemplate: `syncAddonWithTemplate.py`.
-
-This script automatically extracts your legacy project settings (such as the add-on name, summary, authors, and repository URL from `buildVars.py`) and merges them cleanly into the newly generated `pyproject.toml` file, while safely preserving empty values if certain metadata is not set.
-
-This automation ensures a seamless transition to the new template infrastructure without losing your original configuration.
-
-The script automatically supports updating two types of legacy add-ons:
-
-* **Legacy Structure (Dictionary-based without pyproject.toml):**
-  For older add-ons where `addon_info` was defined as a standard dictionary, the tool automatically migrates the metadata to the modern `AddonInfo` object structure.
-  It generates a new, fully populated `pyproject.toml` file matching the latest template standards, and synchronizes all infrastructure files.
-
-* **Modern Structure (AddonInfo-based):**
-  For newer add-ons that already use the `AddonInfo` object but need upstream template updates, the tool checks for any missing metadata keys in `buildVars.py` to insert them.
-  It safely updates `pyproject.toml` dependencies and versions while preserving your custom configuration rules for tools like `pyright` and `ruff`.
-
-## Pre-requisites for initial setup
-
-1. Create a repository, for example on GitHub, providing README and LICENSE files.
-
-2. Clone the repository to your local computer:
-
-   ```sh
-   git clone https://github.com/{repoName}.git
-   ```
-
-3. Go to the folder where your repository was cloned:
-
-   ```sh
-   cd {repoFolder}
-   ```
-
-4. In this folder, create an `addon` subfolder and store the code for your add-on.
-
-5. Commit your initial changes:
-
-   ```sh
-   git add .
-   git commit -m "Initial commit"
-   ```
-
-## Updating an Existing Add-on
-
-AddonTemplate evolves over time and regularly receives improvements, bug fixes, new GitHub workflows, and build system updates.
-
-You can merge the latest template changes into your repository instead of manually copying updated files.
-This document explains both the recommended automated update procedure and the manual Git-based workflow.
-
-> [!NOTE]
-> Updating from AddonTemplate only affects your project's infrastructure (build scripts, GitHub workflows, configuration files, etc.).
-> It does **not** modify your add-on's source code.
-
----
-
-## Before you begin
-
-Before initiating any update workflow (automated or manual), please complete these safety checks:
-
-* **Check repository status**:
-  Ensure your working tree is clean.
-
-  ```sh
   git status
   ```
 
@@ -166,7 +91,7 @@ Before running the tool, ensure your system meets the following requirements:
 
   To install or update `tomlkit` globally, run the following command in your terminal:
 
-  ```sh
+  ```
   python -m pip install -U tomlkit
   ```
 
@@ -180,14 +105,14 @@ The script is highly flexible and supports two execution modes:
    Run the script directly from the root of your repository or from any of its subdirectories.
    It will automatically locate the project root by searching for `buildVars.py`.
 
-   ```sh
+   ```
    uv run python syncAddonWithTemplate.py -ad .
    ```
 
 2. **Target Directory Mode (With argument):**
    Run the script from any working directory by supplying the optional `addonDir` path (relative or absolute) pointing to the add-on repository you wish to update.
 
-   ```sh
+   ```
    uv run python syncAddonWithTemplate.py -ad ../MyAddon
    ```
 
@@ -197,14 +122,14 @@ The script is highly flexible and supports two execution modes:
 
 Once the update has completed, verify that the add-on still builds correctly:
 
-```sh
+```
 uv sync
 uv run scons
 ```
 
-If everything builds successfully, remove the <addon>_bak_<timestamp> directory, stage and commit the updated infrastructure:
+If everything builds successfully, remove the `<addon>_bak_<timestamp>` directory, stage and commit the updated infrastructure:
 
-```sh
+```
 git clean -f
 git add .
 git commit -m "chore: sync infrastructure with AddonTemplate"
@@ -243,7 +168,7 @@ To declare custom exceptions, create a plain text file named `.addonmergeignore`
 
 For instance, if you wish to prevent the synchronization process from overwriting your custom execution scripts or your exclusion mapping file itself, simply add them to the file:
 
-```sh
+```
 # Freeze the synchronization script version
 syncAddonWithTemplate.py
 # Protect your local merge settings file from being replaced
@@ -271,13 +196,13 @@ Downloads the latest remote template, creates a safety backup of your repository
 
 * **Syntax A (Script inside the add-on repository):**
 
-  ```sh
+  ```
   uv run python syncAddonWithTemplate.py -ad .
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
-  ```sh
+  ```
   uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon
   ```
 
@@ -287,13 +212,13 @@ Useful when testing local modifications applied to the `AddonTemplate` or when w
 
 * **Syntax A (Script inside the add-on repository):**
 
-  ```sh
+  ```
   uv run python syncAddonWithTemplate.py -ad . -td /path/to/local/AddonTemplate
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
-  ```sh
+  ```
   uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon -td /path/to/local/AddonTemplate
   ```
 
@@ -303,13 +228,13 @@ Analyzes structural layouts, evaluates configurations, reads the `.addonmergeign
 
 * **Syntax A (Script inside the add-on repository):**
 
-  ```sh
+  ```
   uv run python syncAddonWithTemplate.py -ad . --dry-run
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
-  ```sh
+  ```
   uv run python /path/to/syncAddonWithTemplate.py --dry-run -ad /path/to/my-nvda-addon
   ```
 
@@ -319,13 +244,13 @@ Target a project repository while skipping the automated safety backup creation 
 
 * **Syntax A (Script inside the add-on repository):**
 
-  ```sh
+  ```
   uv run python syncAddonWithTemplate.py -ad . --skip-backup
   ```
 
 * **Syntax B (Script outside the add-on repository):**
 
-  ```sh
+  ```
   uv run python /path/to/syncAddonWithTemplate.py -ad /path/to/my-nvda-addon --skip-backup
   ```
 
@@ -333,20 +258,8 @@ Target a project repository while skipping the automated safety backup creation 
 
 If you wish to execute the synchronization script directly without installing its mandatory dependencies (like `tomlkit`) into your current environment beforehand, you can request `uv` to fetch and expose the packages temporarily during the command lifetime by using the `--with` flag:
 
-```sh
-uv run --with tomlkit python syncAddonWithTemplate.py -ad .
 ```
-
----
-
-## Unit Testing the Add-on
-
-Ensuring your add-on behavior remains consistent during development and following template updates is done through unit testing. Tests are stored in the `tests/` subdirectory and can be validated quickly using `pytest` inside the virtual environment managed by `uv`.
-
-To run the unit test suite on your local workspace, use the following command:
-
-```sh
-uv run pytest
+uv run --with tomlkit python syncAddonWithTemplate.py -ad .
 ```
 
 ---
@@ -359,13 +272,13 @@ If you prefer not to use the automated tool, you can manually merge the latest v
 
 1. If you haven't done it yet, from your add-on repository, add the addonTemplate as a remote.
 
-```sh
+```
 git remote add template https://github.com/nvaccess/addonTemplate.git
 ```
 
 2. Fetch the template:
 
-```sh
+```
 git fetch template
 ```
 
@@ -373,7 +286,7 @@ git fetch template
 
 Merge the latest version of AddonTemplate:
 
-```sh
+```
 git merge template/master --allow-unrelated-histories --squash
 ```
 
@@ -411,7 +324,7 @@ Your add-on documentation should not be replaced by the template.
 
 To keep your `.md` files from your add-on repository, ensuring they aren't replaced with files from the template, you can use the following command:
 
-```sh
+```
 git restore *.md --source=HEAD
 ```
 
@@ -422,13 +335,13 @@ It is not intended to become part of your add-on repository.
 
 Remove it:
 
-```sh
+```
 git rm -r docs
 ```
 
 Or use the restore command:
 
-```sh
+```
 git restore docs --source=HEAD
 ```
 
@@ -475,20 +388,20 @@ Review any conflicts if necessary before completing the merge.
 
 Once all conflicts have been resolved, check if the add-on can be built properly:
 
-```sh
+```
 uv sync
 uv run scons
 ```
 
 If everything builds successfully, stage the modified files:
 
-```sh
+```
 git add .
 ```
 
 Then create the merge commit:
 
-```sh
+```
 git commit -m "chore: sync infrastructure with AddonTemplate"
 ```
 
@@ -527,13 +440,13 @@ Since the automated script creates an untracked timestamped full copy backup dir
 
 If you have already staged some changes, you can also discard them using:
 
-```sh
+```
 git restore . --staged
 ```
 
 Then restore your working tree:
 
-```sh
+```
 git restore . --source=HEAD
 ```
 
@@ -541,7 +454,7 @@ git restore . --source=HEAD
 
 If you have not yet committed the merge and **did not** use the `--squash` option, you can cancel it with:
 
-```sh
+```
 git merge --abort
 ```
 
@@ -549,13 +462,13 @@ If you performed a squash merge, `git merge --abort` is no longer available beca
 
 In this case, restore your repository manually with:
 
-```sh
+```
 git restore . --staged
 git restore . --source=HEAD
 ```
 
 If you have already committed the update and want to return to the previous state, you can reset your branch:
 
-```sh
+```
 git reset --hard {cleanBranch}
-``````
+```
