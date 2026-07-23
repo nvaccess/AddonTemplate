@@ -48,7 +48,7 @@ l10n = [
 lint = [
 	"uv==0.11.15",
 	"ruff==0.14.5",
-	"pre-commit==4.2.0",
+	"prek==0.4.8",
 	"pyright[nodejs]==1.1.411",
 ]
 dev = [
