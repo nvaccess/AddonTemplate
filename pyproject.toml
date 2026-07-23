@@ -229,3 +229,6 @@ reportMissingTypeStubs = false
 
 # Bad rules
 # These are sorted alphabetically and should be enabled and moved to compliant rules section when resolved.
+
+[tool.setuptools]
+py-modules = []
