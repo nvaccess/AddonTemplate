@@ -371,9 +371,20 @@ def mergePyprojectToml(projPath: str | Path, tplPath: str | Path, metadata: dict
 				tplDeps = projectSection["dependencies"]
 				tplBases = {getBasePackageName(d) for d in tplDeps}
 
+				# Collect all tooling package names managed by template dependency groups
+				groupBases: set[str] = set()
+				if "dependency-groups" in mergedData:
+					for grp in mergedData["dependency-groups"].values():
+						if isinstance(grp, list):
+							for item in grp:
+								if isinstance(item, str):
+									groupBases.add(getBasePackageName(item))
+
 				for dep in projDeps:
 					base = getBasePackageName(dep)
-					if base not in tplBases:
+					# Only append to project.dependencies if not already present in template
+					# dependencies nor managed by PEP 735 dependency groups
+					if base not in tplBases and base not in groupBases:
 						tplDeps.append(dep)
 
 		if not dryRun:
