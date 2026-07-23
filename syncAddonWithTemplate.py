@@ -498,6 +498,7 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> None:
 		".venv",
 		"docs",
 		".ruff_cache",
+		"tests",
 	}
 
 	ignoreFilePath = os.path.join(addonDir, ".addonmergeignore")
