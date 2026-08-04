@@ -6,17 +6,31 @@ This template supports translating add-ons with Crowdin.
 
 ## Crowdin Project Setup
 
-You need a Crowdin account and an API token with permissions to manage a project.
-If you wish to use the community project [Crowdin project to translate NVDA add-ons](https://crowdin.com/project/nvdaaddons):
+You need a Crowdin account and an API token with permissions to manage a project. If you wish to use the community project [Crowdin project to translate NVDA add-ons](https://crowdin.com/project/nvdaaddons):
 
 * **Request Access:** Send a message to the [NVDA translation mailing list](https://groups.io/g/nvda-translations) (**nvda-translations@groups.io**), or in the [NVDA Add-ons Mailing List](https://groups.io/g/nvda-addons) (**nvda-addons@groups.io**), requesting an invitation to join the project as a developer.
 * **API Token:** Once invited, generate an API token in your Crowdin account settings.
+
+### Required Token Scope & Permissions
+
+To maintain minimum necessary privileges, configure your token in **Account Settings > API > New Token** with the following settings:
+
+1. **Project Restriction:** Under **Projects**, choose **Selected projects** and select only the NVDA add-ons community project.
+2. **Scopes:** Select only these permissions:
+* **`projects` (Read):** Required to retrieve project settings and configuration.
+* **`source-files` (Read & Write):** Required to upload `.pot` and `.xliff` source files.
+* **`translations` (Read & Write):** Required to download translated `.po` and `.xliff` files and verify translation progress.
+
+> **Note:** Leave all other scopes (*User*, *Webhooks*, *Screenshots*, *Reports*, *Billing*) unchecked, as they are not required by the synchronization scripts.
 
 ## GitHub Secrets and Variables
 
 To allow the workflows to communicate with Crowdin, you must add the following secret to your GitHub repository (`Settings > Secrets and variables > Actions`):
 
-* `CROWDIN_TOKEN`: Paste your Crowdin API token here.
+1. In the **Repository secrets** section, click **New repository secret**.
+2. In the **Name** field, enter `CROWDIN_TOKEN`.
+3. In the **Secret** field, paste your Crowdin API token.
+4. Click **Add secret** to save it. Once added, the token will be available to your repository's workflows.
 
 Optionally, if you don't want to use the [Crowdin community project](https://crowdin.com/project/nvdaaddons), you can create repository variables from **Settings > Secrets and variables > Actions > Variables** by selecting the **Variables** tab and clicking **New repository variable**.
 
