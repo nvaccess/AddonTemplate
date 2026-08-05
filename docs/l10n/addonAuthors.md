@@ -18,9 +18,9 @@ To maintain minimum necessary privileges, configure your token in **Account Sett
 
 1. **Project Restriction:** Under **Projects**, choose **Selected projects** and select only the NVDA add-ons community project.
 1. **Scopes:** Select only these permissions:
-  * **`projects` (Read):** Required to retrieve project settings and configuration.
-  * **`source-files` (Read & Write):** Required to upload `.pot` and `.xliff` source files.
-  * **`translations` (Read & Write):** Required to download translated `.po` and `.xliff` files and verify translation progress.
+    * **`projects` (Read):** Required to retrieve project settings and configuration.
+    * **`source-files` (Read & Write):** Required to upload `.pot` and `.xliff` source files.
+    * **`translations` (Read & Write):** Required to download translated `.po` and `.xliff` files and verify translation progress.
 
 > **Note:** Leave all other scopes (*User*, *Webhooks*, *Screenshots*, *Reports*, *Billing*) unchecked, as they are not required by the synchronization scripts.
 
