@@ -1,0 +1,104 @@
+name: Special Case Issue
+description: A complex or exceptional issue that doesn't fit into standard templates
+type: Task
+labels: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Special Case Issue
+
+        Use this template if your issue doesn't fit into standard bug report or feature request categories.
+        Before proceeding, please verify if standard templates are more appropriate:
+        - [Bug Report](01-bug_report.yaml)
+        - [Feature Request](02-feature_request.yaml)
+
+  - type: textarea
+    id: detailedDescription
+    attributes:
+      label: Detailed description of the issue
+      description: Provide a detailed description of the issue or topic.
+    validations:
+      required: true
+
+  - type: textarea
+    id: templateJustification
+    attributes:
+      label: Why are the other templates not appropriate in this case?
+      description: Explain why standard bug report or feature request templates are not suitable.
+    validations:
+      required: true
+
+  - type: input
+    id: communityDiscussion
+    attributes:
+      label: Link to any related community discussion (if applicable)
+      description: Mention if you have discussed this topic on forums, GitHub discussions, or mailing lists.
+
+  - type: textarea
+    id: additionalInfo
+    attributes:
+      label: Additional information (if applicable)
+
+  - type: markdown
+    attributes:
+      value: |
+        ### Issue behavior (if applicable)
+
+  - type: textarea
+    id: stepsToReproduce
+    attributes:
+      label: Steps to reproduce or illustrate the issue (if applicable)
+
+  - type: textarea
+    id: expectedOutcome
+    attributes:
+      label: Expected outcome or behavior (if applicable)
+
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Logs, screenshots and other attachments (if applicable)
+
+  - type: markdown
+    attributes:
+      value: |
+        ### System Configuration (if applicable)
+
+  - type: input
+    id: addonVersion
+    attributes:
+      label: Add-on version
+
+  - type: dropdown
+    id: nvdaType
+    attributes:
+      label: NVDA type
+      multiple: true
+      options: ["installed copy", "portable copy", "installer/launcher copy", "source copy"]
+
+  - type: input
+    id: nvdaVersion
+    attributes:
+      label: NVDA version
+
+  - type: textarea
+    id: otherNvdaVersions
+    attributes:
+      label: Have you tried any other versions of NVDA?
+
+  - type: input
+    id: winVersion
+    attributes:
+      label: Windows version
+
+  - type: textarea
+    id: otherVersions
+    attributes:
+      label: Name and version of other software in use
+
+  - type: textarea
+    id: otherSysInfo
+    attributes:
+      label: Other information about your system
