@@ -1,5 +1,5 @@
 name: Developer facing changes
-description: Maintenance tasks, API changes, and code changes which are not user facing changes
+description: Maintenance tasks, API changes, and code changes which are not user-facing changes
 type: Task
 labels: [maintenance]
 
