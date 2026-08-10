@@ -102,7 +102,7 @@ body:
       label: NVDA version
       description: |
         Which version(s) of NVDA can you reproduce this issue with?
-        This can be copied from the NVDA About dialog (NVDA menu -> Help -> About).
+        This can be copied from the NVDA About dialog (NVDA menu, Help, About).
     validations:
       required: true
 
