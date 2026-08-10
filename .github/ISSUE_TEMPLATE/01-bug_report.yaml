@@ -29,7 +29,7 @@ body:
         Include any sample files or links required to reproduce the issue.
       placeholder: |
         Example:
-        1. Press NVDA+Ctrl+X to open add-on dialog
+        1. Press NVDA+control+X to open add-on dialog
         2. Select "Settings" option
         3. Press Enter
     validations:
