@@ -40,17 +40,6 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: apiBreaking
-    attributes:
-      label: Are the proposed technical changes API breaking?
-      options:
-        - "Unknown"
-        - "Yes"
-        - "No"
-    validations:
-      required: true
-
   - type: textarea
     id: risksIssues
     attributes:
