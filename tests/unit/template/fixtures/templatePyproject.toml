@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "addonTemplate"
+version = "0.1.0"
+description = "NVDA Addon Template"
+dependencies = [
+	"pyright>=1.1.407",
+	"ruff>=0.2.0",
+]
+
+[dependency-groups]
+dev = [
+	"pytest>=7.0.0",
+]
