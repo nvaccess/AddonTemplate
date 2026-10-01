@@ -2,4 +2,4 @@
 # This file is covered by the GNU General Public License.
 # See the file COPYING for more details.
 
-"""Unit test suite for the repository."""
+"""Core synchronization logic package for NVDA Add-on update tool."""
