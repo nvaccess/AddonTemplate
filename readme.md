@@ -104,7 +104,8 @@ uv.lock
 6. Gettext translations must be placed into `addon\locale\<lang>/LC_MESSAGES\nvda.po`.
 7. If you create releases with the GitHub workflow, pushing a tag, update the `changelog.md` file with the release description you want to be displayed in on your GitHub release page.
 8. In the `[project]` section of `pyproject.toml`, update your project information.
-9. Update the pull request template: by default, `.github/PULL_REQUEST_TEMPLATE.md` is a symlink pointing to `PULL_REQUEST_TEMPLATE/TEMPLATE_PR.md` (which is designed for contributions to this template). For your add-on repository, update this symlink to point to `PULL_REQUEST_TEMPLATE/ADDON_PR.md` (or replace it with a copy of `ADDON_PR.md`) so that pull requests in your repository use the add-on contribution template.
+9. Update the pull request template: by default, `.github/PULL_REQUEST_TEMPLATE.md` is a symlink pointing to `PULL_REQUEST_TEMPLATE/TEMPLATE_PR.md` (which is designed for contributions to this template).
+For your add-on repository, update this symlink to point to `PULL_REQUEST_TEMPLATE/ADDON_PR.md` (or replace it with a copy of `ADDON_PR.md`) so that pull requests in your repository use the add-on contribution template.
 
 Alternatively, you can integrate this template in your add-on using Git.
 For more details, read [integrating the add-on template using Git](docs/managementFromGit/updatingExistingAddons.md).
