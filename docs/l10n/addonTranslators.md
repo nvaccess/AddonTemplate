@@ -67,7 +67,7 @@ Poedit supports both:
 * Portable Object (`.po`) files used for interface translations.
 * XLIFF (`.xliff`) files used for documentation translations.
 
-After completing translations locally, files can be uploaded back to Crowdin using [l10nUtil.exe](https://github.com/nvaccess/nvdaL10n/releases/latest).
+After completing translations locally, files can be uploaded back to Crowdin using [l10nUtil.exe](https://github.com/nvaccess/nvdaL10n/releases/latest/download/l10nUtil.exe).
 
 ## Translating Interface Strings
 
@@ -97,7 +97,7 @@ When translating documentation:
 
 ## Uploading Offline Translations
 
-After translating files locally, they can be uploaded to Crowdin using [l10nUtil.exe](https://github.com/nvaccess/nvdaL10n/releases/latest)
+After translating files locally, they can be uploaded to Crowdin using [l10nUtil.exe](https://github.com/nvaccess/nvdaL10n/releases/latest/download/l10nUtil.exe)
 
 Examples:
 
