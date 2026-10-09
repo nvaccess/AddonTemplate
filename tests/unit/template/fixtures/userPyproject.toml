@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "myAddon"
+version = "1.0.0"
+description = "My test addon"
+dependencies = [
+	"pyright>=1.1.411",
+	"ruff>=0.1.0",
+	"requests>=2.28.0",
+]
+
+[dependency-groups]
+dev = [
+	"pytest>=8.0.0",
+]
