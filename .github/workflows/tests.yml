@@ -1,4 +1,4 @@
-name: Unit Tests
+name: Tests
 
 on:
   push:
@@ -6,8 +6,8 @@ on:
   pull_request:
 
 jobs:
-  unit-tests:
-    name: Run Unit Tests
+  run-tests:
+    name: Run Test Suite (Unit & E2E)
     runs-on: ubuntu-latest
 
     steps:
