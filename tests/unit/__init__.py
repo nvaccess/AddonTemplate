@@ -2,4 +2,4 @@
 # This file is covered by the GNU General Public License.
 # See the file COPYING for more details.
 
-"""Unit tests package."""
+"""Unit test suite for the repository."""
