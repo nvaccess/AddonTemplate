@@ -51,6 +51,7 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> bool:
 
 	protectedElementsSet: set[str] = {
 		".addonmergeignore",
+		".python-version",
 		"readme.md",
 		"changelog.md",
 		"addontemplate.egg-info",
