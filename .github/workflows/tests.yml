@@ -20,7 +20,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version-file: '.python-version'
 
       - name: Run test suite via unittest
         run: uv run python -m unittest discover -s tests -v
