@@ -144,7 +144,10 @@ def mergeBuildvarsFile(
 					formattedValueText: str
 					if valueVal is None:
 						formattedValueText = "None"
-					elif isinstance(kwItem.value, ast.Constant):
+					elif (
+						isinstance(kwItem.value, ast.Constant)
+						or (isinstance(kwItem.value, ast.Call) and getattr(kwItem.value.func, "id", None) == "_")
+					):
 						# Handle direct literal values (strings, numbers, booleans)
 						isTranslatable: bool = keyName in ["addon_summary", "addon_description", "addon_changelog"]
 						
