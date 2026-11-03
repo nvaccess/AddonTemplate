@@ -253,15 +253,48 @@ def processDependencyGroupsMigration(
 	mergedDictData: dict[str, Any],
 	userFlatDependenciesList: list[Any],
 ) -> None:
-	"""Migrate legacy flat project dependencies into modern template dependency-groups.
+	"""Migrate legacy flat project dependencies, clean up redundant dev dependencies, 
+	and synchronize version constraints.
 
-	Updates group versions if user versions are strictly higher, and purges migrated
+	Purges redundant entries from dependency-groups.dev when covered by included groups,
+	updates group versions if user versions are strictly higher, and removes migrated
 	items from project.dependencies to prevent unsatisfiable uv sync conflicts.
 
 	:param mergedDictData: The merged TOML structure dictionary.
 	:param userFlatDependenciesList: The original list of flat dependencies from user's project.
 	:return: None
 	"""
+	if "dependency-groups" not in mergedDictData:
+		return
+
+	depGroupsTable: dict[str, Any] = mergedDictData["dependency-groups"]
+
+	# 1. Collect all base package names provided by other groups or included groups
+	includedPackagesSet: set[str] = set()
+	groupName: str
+	groupList: Any
+	
+	# First pass: identify packages present in build/l10n/lint groups
+	for groupName, groupList in depGroupsTable.items():
+		if groupName == "dev" or not isinstance(groupList, list):
+			continue
+		for item in groupList:
+			if isinstance(item, str):
+				includedPackagesSet.add(getBasePackageName(item))
+
+	# 2. Clean up redundant string entries in the 'dev' group if covered by included groups
+	if "dev" in depGroupsTable and isinstance(depGroupsTable["dev"], list):
+		cleanedDevList: list[Any] = []
+		for item in depGroupsTable["dev"]:
+			if isinstance(item, str):
+				baseName: str = getBasePackageName(item)
+				# If this package is already covered by a sub-group (like build/scons), drop the redundant string
+				if baseName in includedPackagesSet:
+					logger.debug("Purging redundant dependency from dependency-groups.dev: %r", item)
+					continue
+			cleanedDevList.append(item)
+		depGroupsTable["dev"] = cleanedDevList
+
 	if "dependency-groups" not in mergedDictData:
 		return
 
