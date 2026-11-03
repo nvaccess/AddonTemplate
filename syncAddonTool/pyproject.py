@@ -469,6 +469,11 @@ def mergePyprojectToml(
 		mergedDictData: dict[str, Any] = deepMergeDicts(
 			cast(dict[str, Any], projTomlData), cast(dict[str, Any], tplTomlData)
 		)
+		# Force requires-python synchronization from the template
+		if "project" in tplTomlData and "requires-python" in tplTomlData["project"]:
+			if "project" in mergedDictData:
+				mergedDictData["project"]["requires-python"] = tplTomlData["project"]["requires-python"]
+				logger.debug("Updated requires-python to match template: %r", tplTomlData["project"]["requires-python"])
 		# Remove static metadata fields from the merged dynamic list to comply with PEP 621
 		projectMetadata: Any = mergedDictData.get("project")
 		if isinstance(projectMetadata, MutableMapping) and "dynamic" in projectMetadata:
