@@ -5,6 +5,7 @@
 """Extraction, parsing, and precise AST range merging for buildVars.py."""
 
 import ast
+import re
 import logging
 from pathlib import Path
 from typing import Any
@@ -15,7 +16,7 @@ logger: logging.Logger = logging.getLogger("syncAddon")
 
 
 def formatStringLiteral(val: str, useDoubleQuotes: bool = False, isTranslatable: bool = False) -> str:
-	"""Format a string literal preserving either double or single quotes.
+	"""Format a string literal preserving either double or single quotes and unicode characters.
 
 	:param val: The string value to format.
 	:param useDoubleQuotes: If True, format using double quotes; otherwise default to single quotes.
@@ -24,11 +25,13 @@ def formatStringLiteral(val: str, useDoubleQuotes: bool = False, isTranslatable:
 	"""
 	formattedText: str
 	if useDoubleQuotes:
-		# Escape control characters, backslashes, and double quotes.
-		escapedValText: str = val.encode("unicode_escape").decode("ascii").replace('"', '\\"')
+		# Escape backslashes and double quotes first
+		escapedValText: str = val.replace("\\", "\\\\").replace('"', '\\"')
+		# Safely escape low ASCII control characters (0x00 to 0x1f) while keeping UTF-8 unicode untouched
+		escapedValText = re.sub(r"[\x00-\x1f]", lambda m: f"\\x{ord(m.group(0)):02x}", escapedValText)
 		formattedText = f'"{escapedValText}"'
 	else:
-		# Default style using repr (single quotes)
+		# In Python 3, repr() preserves unicode characters as plain text while handling single quotes.
 		formattedText = repr(val)
 
 	return f"_({formattedText})" if isTranslatable else formattedText
