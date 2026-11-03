@@ -92,6 +92,7 @@ def mergeDependencyLists(
 		not contextName
 		or contextName == "dependencies"
 		or contextName.endswith(".dependencies")
+		or contextName.endswith("requires")
 		or "dependency-groups" in contextName
 	)
 
