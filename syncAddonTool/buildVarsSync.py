@@ -68,7 +68,7 @@ def extractBuildvarsMetadata(filePath: str | Path) -> tuple[dict[str, Any], dict
 	}
 
 	astNodeItem: ast.AST
-	for astNodeItem in ast.walk(parsedTree):
+	for astNodeItem in parsedTree.body:
 		if isinstance(astNodeItem, ast.Assign) and len(astNodeItem.targets) == 1:
 			assignTarget: ast.expr = astNodeItem.targets[0]
 			if not isinstance(assignTarget, ast.Name):

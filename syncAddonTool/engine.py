@@ -65,6 +65,8 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> bool:
 	}
 
 	ignoreFilePath: str = os.path.join(addonDir, ".addonmergeignore")
+	if dryRun and not os.path.exists(ignoreFilePath):
+		ignoreFilePath = os.path.join(tempDir, ".addonmergeignore")
 	if os.path.exists(ignoreFilePath):
 		logger.debug("Reading local custom exclusions from .addonmergeignore...")
 		try:
@@ -75,7 +77,8 @@ def runSynchronization(tempDir: str, addonDir: str, dryRun: bool) -> bool:
 					if cleanLineText and not cleanLineText.startswith("#"):
 						protectedElementsSet.add(cleanLineText)
 		except Exception as exceptionObj:
-			logger.warning("Failed to parse .addonmergeignore (%s)", exceptionObj)
+			logger.error("Failed to parse .addonmergeignore (%s). Aborting synchronization.", exceptionObj)
+			return False
 
 	syncReportList: list[str] = []
 

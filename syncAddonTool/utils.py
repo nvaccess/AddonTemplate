@@ -99,7 +99,7 @@ def getBasePackageName(dependencyStringText: str) -> str:
 	"""
 	regexMatch: re.Match[str] | None = re.match(r"^[A-Za-z0-9][A-Za-z0-9._-]*", dependencyStringText.strip())
 	basePackageName: str = regexMatch.group(0) if regexMatch else dependencyStringText.strip()
-	return basePackageName.lower().replace("_", "-")
+	return re.sub(r"[-_.]+", "-", basePackageName.lower())
 
 
 def insertKeyAfter(table: Any, targetKey: str, newKey: str, value: Any) -> None:
